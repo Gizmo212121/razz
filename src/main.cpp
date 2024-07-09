@@ -1,24 +1,12 @@
-#include <ncurses.h>
-
-void initNcurses()
-{
-    initscr();
-    noecho();
-    cbreak();
-    keypad(stdscr, true);
-}
+// #include "Editor.h"
+#include "CommandQueue.h"
 
 int main(int argc, char* argv[])
 {
     const char* fileName = "default";
     if (argc > 1) { fileName = argv[1] ; }
 
-    initNcurses();
-
-    printw("%s", fileName);
-    refresh();
-    getch();
-    endwin();
+    CommandQueue commandQueue;
 
     return 0;
 }
