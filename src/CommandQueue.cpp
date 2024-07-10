@@ -2,61 +2,11 @@
 #include <cassert>
 #include <memory>
 
-// In future, construct with save file to fill command queue
+// TODO: In future, construct with save file to fill command queue
 /* CommandQueue::CommandQueue()
 {
 
 } */
-
-template <typename CommandType>
-void CommandQueue::execute(const int repetition)
-{
-    assert(repetition > 0);
-
-    bool modifiesBuffer;
-
-    for (int repeat = 0; repeat < repetition; repeat++)
-    {
-        // If executing the command changes any buffers, add it to deque
-        std::unique_ptr<Command> command = std::make_unique<CommandType>();
-
-        modifiesBuffer = command->execute();
-
-        if (modifiesBuffer)
-        {
-            if (m_currentCommandCount < m_maxCommandHistory)
-            {
-                if (m_currentCommandCount < m_commands.size())
-                {
-                    m_commands[m_currentCommandCount] = std::move(command);
-                    m_commandRepetitions[m_currentCommandCount] = m_repetitionCounter;
-                }
-                else
-                {
-                    m_commands.push_back(std::move(command));
-                    m_commandRepetitions.push_back(m_repetitionCounter);
-                }
-
-                m_currentCommandCount++;
-            }
-            else
-            {
-                m_commands.push_back(std::move(command));
-                m_commands.pop_front();
-
-                m_commandRepetitions.push_back(m_repetitionCounter);
-                m_commandRepetitions.pop_front();
-            }
-
-            m_undoesSinceChange = 0;
-        }
-
-        // std::cout << "Current command count: " << m_currentCommandCount << '\n';
-        // std::cout << "SIZE OF DEQUE: " << m_commands.size() << '\n';
-    }
-
-    m_repetitionCounter++;
-}
 
 void CommandQueue::undo()
 {
@@ -143,8 +93,3 @@ void CommandQueue::printRepetitionQueue() const
 
     std::cout << std::endl;
 }
-
-template void CommandQueue::execute<Test1>(int repetitions);
-template void CommandQueue::execute<Test2>(int repetitions);
-template void CommandQueue::execute<Test3>(int repetitions);
-template void CommandQueue::execute<Test4>(int repetitions);

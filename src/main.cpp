@@ -1,12 +1,13 @@
-// #include "Editor.h"
-#include "CommandQueue.h"
+#include "Editor.h"
 
 int main(int argc, char* argv[])
 {
     const char* fileName = "default";
     if (argc > 1) { fileName = argv[1] ; }
 
-    CommandQueue commandQueue;
+    Editor editor;
+
+    editor.run();
 
     return 0;
 }

@@ -1,3 +1,15 @@
+#pragma once
+
+class Editor;
+
+enum MODE
+{
+    INSERT_MODE,
+    NORMAL_MODE,
+    COMMAND_MODE
+};
+
+
 class Command
 {
 
@@ -8,26 +20,34 @@ public:
 
 };
 
-class Test1 : public Command
+class QuitCommand : public Command
 {
+
+private:
+
+    Editor* m_editor;
+
     void undo() override;
     bool execute() override;
+
+public:
+
+    QuitCommand(Editor* editor);
+
 };
 
-class Test2 : public Command
+class SetModeCommand : public Command
 {
-    void undo() override;
-    bool execute() override;
-};
 
-class Test3 : public Command
-{
-    void undo() override;
-    bool execute() override;
-};
+private:
 
-class Test4 : public Command
-{
+    Editor* m_editor;
+    MODE m_mode;
+
     void undo() override;
     bool execute() override;
+
+public:
+
+    SetModeCommand(Editor* editor, MODE mode);
 };

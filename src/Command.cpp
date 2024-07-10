@@ -1,46 +1,37 @@
 #include "Command.h"
-#include <iostream>
+#include "Editor.h"
 
-void Test1::undo()
+QuitCommand::QuitCommand(Editor* editor)
+    : m_editor(editor)
 {
-    std::cout << "UNDO COMMAND 1" << std::endl;
+
 }
 
-bool Test1::execute()
+void QuitCommand::undo()
 {
-    std::cout << "COMMAND 1" << std::endl;
-    return true;
+
 }
 
-void Test2::undo()
+bool QuitCommand::execute()
 {
-    std::cout << "UNDO COMMAND 2" << std::endl;
+    m_editor->quit();
+    return false;
 }
 
-bool Test2::execute()
+
+SetModeCommand::SetModeCommand(Editor* editor, MODE mode)
+    : m_editor(editor), m_mode(mode)
 {
-    std::cout << "COMMAND 2" << std::endl;
-    return true;
+
 }
 
-void Test3::undo()
+void SetModeCommand::undo()
 {
-    std::cout << "UNDO COMMAND 3" << std::endl;
+
 }
 
-bool Test3::execute()
+bool SetModeCommand::execute()
 {
-    std::cout << "COMMAND 3" << std::endl;
-    return true;
-}
-
-void Test4::undo()
-{
-    std::cout << "UNDO COMMAND 4" << std::endl;
-}
-
-bool Test4::execute()
-{
-    std::cout << "COMMAND 4" << std::endl;
-    return true;
+    m_editor->setMode(m_mode);
+    return false;
 }
