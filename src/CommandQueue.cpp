@@ -14,7 +14,7 @@ void CommandQueue::undo()
     {
         if (m_currentCommandCount <= 0)
         {
-            std::cout << "Already at oldest change!\n";
+            // std::cout << "Already at oldest change!\n";
             return;
         }
 
@@ -75,12 +75,12 @@ void CommandQueue::redo()
         while (m_undoesSinceChange > 0 && m_commandRepetitions[m_currentCommandCount] == repetitionNumber)
         {
             m_undoesSinceChange--;
-            m_commands[m_currentCommandCount++]->execute();
+            m_commands[m_currentCommandCount++]->redo();
         }
     }
     else
     {
-        std::cout << "Already at newest change!\n";
+        // std::cout << "Already at newest change!\n";
     }
 }
 

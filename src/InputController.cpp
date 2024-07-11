@@ -71,6 +71,12 @@ void InputController::handleNormalModeInput()
         case QUOTE:
             m_editor->commandQueue().execute<CursorFullRightCommand>(1);
             break;
+        case I:
+            m_editor->commandQueue().execute<CursorFullBottomCommand>(1);
+            break;
+        case P:
+            m_editor->commandQueue().execute<CursorFullTopCommand>(1);
+            break;
         case u:
             m_editor->commandQueue().execute<UndoCommand>(1);
             break;
@@ -89,9 +95,9 @@ void InputController::handleNormalModeInput()
             }
             else
             {
-                clear();
-                move(0, 0);
-                printw("You printed: %c with integer code: %d", getch, getch);
+                // clear();
+                // move(0, 0);
+                // printw("You printed: %c with integer code: %d", getch, getch);
             }
 
             break;
@@ -165,8 +171,7 @@ void InputController::handleInsertModeInput()
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             break;
         default:
-            // TODO: Attempt typing characters in insert mode
-            // m_editor->commandQueue().execute<InsertChar>(1, m_editor, getch);
+            m_editor->commandQueue().execute<InsertCharacterCommand>(1, getch);
             break;
 
     }

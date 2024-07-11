@@ -105,5 +105,35 @@ void Buffer::shiftCursorFullTop()
 
 void Buffer::shiftCursorFullBottom()
 {
+    m_cursorY = static_cast<int>(m_lines.size()) - 1;
 
+    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].size() - 1), m_lastXSinceYMove);
+    m_cursorX = std::max(0, minCursorX);
+
+    move(m_cursorY, m_cursorX);
+
+    refresh();
+}
+
+void Buffer::insertCharacter(char character)
+{
+    m_lines[m_cursorY].insert(m_lines[m_cursorY].begin() + m_cursorX, character);
+
+    m_cursorX += 1;
+    move(m_cursorY, m_cursorX);
+}
+
+void Buffer::insertCharacter(char character, int y, int x)
+{
+    m_lines[y].insert(m_lines[y].begin() + x - 1, character);
+}
+
+void Buffer::removeCharacter()
+{
+    m_lines[m_cursorY].erase(m_cursorX, 1);
+}
+
+void Buffer::removeCharacter(int y, int x)
+{
+    m_lines[y].erase(x - 1, 1);
 }

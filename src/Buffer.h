@@ -30,6 +30,11 @@ public:
     void shiftCursorFullTop();
     void shiftCursorFullBottom();
 
+    void insertCharacter(char character);
+    void insertCharacter(char character, int y, int x);
+    void removeCharacter();
+    void removeCharacter(int y, int x);
+
     // GETTERS
     const std::vector<std::string>& getLines() const { return m_lines ; }
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }

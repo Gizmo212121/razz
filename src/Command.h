@@ -29,6 +29,7 @@ public:
         : m_editor(editor), m_buffer(buffer), m_view(view), m_commandQueue(commandQueue) {}
 
     // virtual ~Command() = default;
+    virtual void redo() = 0;
     virtual void undo() = 0;
     virtual bool execute() = 0;
 
@@ -37,6 +38,7 @@ public:
 class QuitCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -49,6 +51,7 @@ class SetModeCommand : public Command
 private:
     MODE m_mode;
 
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -61,6 +64,7 @@ class MoveCursorXCommand : public Command
 private:
     int deltaX = 0;
 
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -73,6 +77,7 @@ class MoveCursorYCommand : public Command
 private:
     int deltaY = 0;
 
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -83,6 +88,7 @@ public:
 class UndoCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -93,6 +99,7 @@ public:
 class RedoCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -103,6 +110,7 @@ public:
 class CursorFullRightCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -113,6 +121,7 @@ public:
 class CursorFullLeftCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -123,6 +132,7 @@ public:
 class CursorFullTopCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
@@ -133,9 +143,25 @@ public:
 class CursorFullBottomCommand : public Command
 {
 private:
+    void redo() override;
     void undo() override;
     bool execute() override;
 public:
     CursorFullBottomCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
         : Command(editor, buffer, view, commandQueue) {}
+};
+
+class InsertCharacterCommand : public Command
+{
+private:
+    char m_character;
+    int m_x = 0;
+    int m_y = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    InsertCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character)
+        : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };
