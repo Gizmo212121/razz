@@ -6,7 +6,7 @@
 #include <string>
 
 InputController::InputController(Editor* editor)
-    : m_editor(editor), m_commandBuffer("")
+    : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer("1"), m_typingIntoRepetitionBuffer(false)
 {
 }
 
@@ -40,19 +40,62 @@ void InputController::handleNormalModeInput()
         case ESCAPE:
             printw("bozo");
             refresh();
-            m_editor->commandQueue().execute<QuitCommand>(1, m_editor);
+            m_editor->commandQueue().execute<QuitCommand>(1);
             break;
         case COLON:
-            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, COMMAND_MODE);
+            clearRepetitionBuffer();
+            m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE);
             break;
         case j:
-            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, INSERT_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE);
+            break;
+        case h:
+            m_editor->commandQueue().execute<MoveCursorXCommand>(atoi(m_repetitionBuffer.c_str()), -1);
+            clearRepetitionBuffer();
+            break;
+        case i:
+            m_editor->commandQueue().execute<MoveCursorYCommand>(atoi(m_repetitionBuffer.c_str()), 1);
+            clearRepetitionBuffer();
+            break;
+        case p:
+            m_editor->commandQueue().execute<MoveCursorYCommand>(atoi(m_repetitionBuffer.c_str()), -1);
+            clearRepetitionBuffer();
+            break;
+        case APOSTROPHE:
+            m_editor->commandQueue().execute<MoveCursorXCommand>(atoi(m_repetitionBuffer.c_str()), 1);
+            clearRepetitionBuffer();
+            break;
+        case H:
+            m_editor->commandQueue().execute<CursorFullLeftCommand>(1);
+            break;
+        case QUOTE:
+            m_editor->commandQueue().execute<CursorFullRightCommand>(1);
+            break;
+        case u:
+            m_editor->commandQueue().execute<UndoCommand>(1);
+            break;
+        case CTRL_R:
+            m_editor->commandQueue().execute<RedoCommand>(1);
             break;
         default:
-            clear();
-            move(0, 0);
-            printw("You printed: %c with integer code: %d", getch, getch);
+        {
+            if (getch >= '0' && getch <= '9')
+            {
+                if (!m_typingIntoRepetitionBuffer && getch == '0' && m_repetitionBuffer == "0") { clearRepetitionBuffer(); break; }
+                else if (!m_typingIntoRepetitionBuffer) { m_repetitionBuffer[0] = static_cast<char>(getch); }
+                else { m_repetitionBuffer.push_back(static_cast<char>(getch)); }
+
+                m_typingIntoRepetitionBuffer = true;
+            }
+            else
+            {
+                clear();
+                move(0, 0);
+                printw("You printed: %c with integer code: %d", getch, getch);
+            }
+
             break;
+        }
     }
 }
 
@@ -62,30 +105,30 @@ void InputController::handleCommandModeInput()
 
     if (getch == CTRL_C)
     {
-        m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+        m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
     }
 
     switch (getch)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             m_commandBuffer.clear();
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             m_commandBuffer.clear();
             break;
         case ENTER:
         {
             if (m_commandBuffer == "q!")
             {
-                m_editor->commandQueue().execute<QuitCommand>(1, m_editor);
+                m_editor->commandQueue().execute<QuitCommand>(1);
             }
             else
             {
                 printw("Not an editor command: %s", m_commandBuffer.c_str());
                 m_commandBuffer.clear();
-                m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             }
 
             break;
@@ -94,7 +137,7 @@ void InputController::handleCommandModeInput()
         {
             if (m_commandBuffer == "")
             {
-                m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             }
             else
             {
@@ -116,10 +159,10 @@ void InputController::handleInsertModeInput()
     switch (getch)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             break;
         default:
             // TODO: Attempt typing characters in insert mode

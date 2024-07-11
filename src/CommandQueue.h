@@ -8,6 +8,9 @@
 #include <iostream>
 #include <cassert>
 
+class Buffer;
+class View;
+
 class CommandQueue
 {
 
@@ -21,7 +24,17 @@ private:
     size_t m_repetitionCounter = 0;
     std::deque<size_t> m_commandRepetitions;
 
+    // POINTERS TO OBJECTS
+    Editor* m_editor;
+    Buffer* m_buffer;
+    View* m_view;
+    CommandQueue* m_commandQueue;
+
+
 public:
+
+    CommandQueue(Editor* editor, Buffer* buffer, View* view)
+        : m_editor(editor), m_buffer(buffer), m_view(view), m_commandQueue(this) {}
 
     void printRepetitionQueue() const;
 
@@ -37,9 +50,9 @@ public:
 
         for (int repeat = 0; repeat < repetition; repeat++)
         {
-            // If executing the command changes any buffers, add it to deque
-            // std::unique_ptr<Command> command = std::make_unique<CommandType>();
-            std::unique_ptr<Command> command = std::make_unique<CommandType>(std::forward<CommandArgs>(commandArgs)...);
+            std::unique_ptr<Command> command = std::make_unique<CommandType>(
+                    m_editor, m_buffer, m_view, m_commandQueue,
+                    std::forward<CommandArgs>(commandArgs)...);
 
             modifiesBuffer = command->execute();
 

@@ -22,7 +22,8 @@ void View::display()
             move(rowCount++, 0);
         }
 
-        move(0, 0);
+        std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+        move(cursorPos.first, cursorPos.second);
 
         refresh();
     }

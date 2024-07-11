@@ -14,7 +14,7 @@ private:
 
     bool m_running = true;
 
-    CommandQueue m_commandHistory;
+    CommandQueue m_commandQueue;
     Buffer m_buffer;
     InputController m_inputController;
     View m_view;
@@ -35,7 +35,8 @@ public:
     void setMode(const MODE mode) { m_currentMode = mode ; }
 
     // GETTERS
+    CommandQueue& commandQueue() { return m_commandQueue ; }
+    Buffer& buffer() { return m_buffer ; }
     MODE mode() const { return m_currentMode ; }
-    CommandQueue& commandQueue() { return m_commandHistory ; }
 
 };
