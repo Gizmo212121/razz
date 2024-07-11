@@ -11,6 +11,7 @@ enum KEYS
     ENTER = 10,
     ESCAPE = 27,
     COLON = 58,
+    j = 106,
     BACKSPACE = 263,
 };
 

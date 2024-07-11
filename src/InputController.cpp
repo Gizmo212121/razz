@@ -45,6 +45,9 @@ void InputController::handleNormalModeInput()
         case COLON:
             m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, COMMAND_MODE);
             break;
+        case j:
+            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, INSERT_MODE);
+            break;
         default:
             clear();
             move(0, 0);
@@ -108,5 +111,20 @@ void InputController::handleCommandModeInput()
 
 void InputController::handleInsertModeInput()
 {
+    int getch = getch();
 
+    switch (getch)
+    {
+        case CTRL_C:
+            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+            break;
+        case ESCAPE:
+            m_editor->commandQueue().execute<SetModeCommand>(1, m_editor, NORMAL_MODE);
+            break;
+        default:
+            // TODO: Attempt typing characters in insert mode
+            // m_editor->commandQueue().execute<InsertChar>(1, m_editor, getch);
+            break;
+
+    }
 }

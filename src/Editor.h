@@ -26,7 +26,7 @@ private:
 
 public:
 
-    Editor();
+    Editor(const std::string& fileName);
 
     void run();
     void quit();

@@ -2,10 +2,7 @@
 
 int main(int argc, char* argv[])
 {
-    const char* fileName = "default";
-    if (argc > 1) { fileName = argv[1] ; }
-
-    Editor editor;
+    Editor editor((argc > 1) ? argv[1] : "NO_NAME");
 
     editor.run();
 

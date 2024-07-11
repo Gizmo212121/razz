@@ -11,6 +11,8 @@ private:
 
 public:
 
+    View(Buffer* buffer);
+
     void display();
 
 };
