@@ -1,11 +1,12 @@
 #include "Buffer.h"
+#include "View.h"
 
 #include <cstdio>
 #include <fstream>
 #include <ncurses.h>
 
-Buffer::Buffer(const std::string& fileName)
-    : m_fileName(fileName), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
+Buffer::Buffer(const std::string& fileName, View* view)
+    : m_view(view), m_fileName(fileName), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
 {
     if (doesFileExist(fileName))
     {
@@ -29,6 +30,13 @@ void Buffer::readFromFile(const std::string& fileName)
     {
         m_lines.push_back(line);
     }
+}
+
+void Buffer::moveCursor(int y, int x)
+{
+    m_cursorY = y;
+    m_cursorX = x;
+    
 }
 
 void Buffer::shiftCursorX( int x)

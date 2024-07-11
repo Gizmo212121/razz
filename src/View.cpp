@@ -8,6 +8,11 @@ View::View(Buffer* buffer)
     display();
 }
 
+void View::moveCursor(int y, int x)
+{
+    move(y, x);
+}
+
 void View::display()
 {
     if (!m_buffer->getLines().empty())
@@ -27,4 +32,14 @@ void View::display()
 
         refresh();
     }
+}
+
+void View::displayCurrentLine(int y)
+{
+    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    move(y, 0);
+    clrtoeol();
+    addstr(m_buffer->getLines()[y].c_str());
+    move(cursorPos.first, cursorPos.second);
+    refresh();
 }

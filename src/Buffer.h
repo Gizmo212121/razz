@@ -3,10 +3,14 @@
 #include <string>
 #include <vector>
 
+class View;
+
 class Buffer
 {
 
 private:
+
+    View* m_view;
 
     std::string m_fileName;
     std::vector<std::string> m_lines;
@@ -21,7 +25,9 @@ private:
 
 public:
 
-    Buffer(const std::string& fileName);
+    Buffer(const std::string& fileName, View* view);
+
+    void moveCursor(int y, int x);
 
     void shiftCursorX(int x);
     void shiftCursorY(int y);

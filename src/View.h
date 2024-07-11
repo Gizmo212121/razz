@@ -13,6 +13,9 @@ public:
 
     View(Buffer* buffer);
 
+    void moveCursor(int y, int x);
+
     void display();
+    void displayCurrentLine(int y);
 
 };

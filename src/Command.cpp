@@ -85,13 +85,17 @@ void InsertCharacterCommand::redo()
 {
     m_buffer->insertCharacter(m_character, m_y, m_x);
 
+    m_view->moveCursor(m_y, m_x);
+
     m_view->display();
 }
 void InsertCharacterCommand::undo()
 {
     m_buffer->removeCharacter(m_y, m_x);
 
-    m_view->display();
+    m_buffer->moveCursor(m_y, m_x);
+
+    m_view->displayCurrentLine(m_y);
 }
 bool InsertCharacterCommand::execute()
 {

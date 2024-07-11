@@ -170,6 +170,9 @@ void InputController::handleInsertModeInput()
         case ESCAPE:
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             break;
+        case BACKSPACE:
+            // m_editor->commandQueue().execute<RemoveCharacterSendCursorLeftCommand>(1);
+            break;
         default:
             m_editor->commandQueue().execute<InsertCharacterCommand>(1, getch);
             break;

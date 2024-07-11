@@ -1,7 +1,7 @@
 #include "Editor.h"
 
 Editor::Editor(const std::string& fileName)
-    : m_commandQueue(this, &m_buffer, &m_view), m_buffer(fileName), m_inputController(this), m_view(&m_buffer), m_currentMode(MODE::NORMAL_MODE)
+    : m_commandQueue(this, &m_buffer, &m_view), m_buffer(fileName, &m_view), m_inputController(this), m_view(&m_buffer), m_currentMode(MODE::NORMAL_MODE)
 {
     initNcurses();
 }
