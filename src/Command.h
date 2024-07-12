@@ -165,3 +165,21 @@ public:
     InsertCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character)
         : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };
+
+class RemoveCharacterCommand : public Command
+{
+private:
+    char m_character;
+    int m_x = 0;
+    int m_y = 0;
+
+    bool m_cursorLeft;
+    int m_cursorDifferential;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    RemoveCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool cursorLeft, int cursorDiff)
+        : Command(editor, buffer, view, commandQueue), m_cursorLeft(cursorLeft), m_cursorDifferential(cursorDiff) {}
+};

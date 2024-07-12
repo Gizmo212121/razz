@@ -85,15 +85,15 @@ void InsertCharacterCommand::redo()
 {
     m_buffer->insertCharacter(m_character, m_y, m_x);
 
-    m_view->moveCursor(m_y, m_x);
+    m_buffer->moveCursor(m_y, m_x);
 
-    m_view->display();
+    m_view->displayCurrentLine(m_y);
 }
 void InsertCharacterCommand::undo()
 {
     m_buffer->removeCharacter(m_y, m_x);
 
-    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->moveCursor(m_y, m_x - 1);
 
     m_view->displayCurrentLine(m_y);
 }
@@ -105,6 +105,33 @@ bool InsertCharacterCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    m_view->display();
+    m_view->displayCurrentLine(m_y);
+    return true;
+}
+
+void RemoveCharacterCommand::redo()
+{
+    m_buffer->removeCharacter(m_y, m_x + m_cursorDifferential);
+    m_view->displayCurrentLine(m_y);
+    m_buffer->moveCursor(m_y, m_x - 1);
+}
+void RemoveCharacterCommand::undo()
+{
+    m_buffer->insertCharacter(m_character, m_y, m_x + m_cursorDifferential);
+    m_view->displayCurrentLine(m_y);
+    m_buffer->moveCursor(m_y, m_x);
+}
+bool RemoveCharacterCommand::execute()
+{
+    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    m_x = cursorPos.second;
+    m_y = cursorPos.first;
+
+    if (m_buffer->getLineSize(m_y) <= 0) { return false; }
+
+    m_character = m_buffer->removeCharacter(m_y, m_x + m_cursorDifferential);
+    m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, m_buffer->getLineSize(m_y) - 1));
+    m_view->displayCurrentLine(m_y);
+
     return true;
 }

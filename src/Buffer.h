@@ -38,12 +38,13 @@ public:
 
     void insertCharacter(char character);
     void insertCharacter(char character, int y, int x);
-    void removeCharacter();
-    void removeCharacter(int y, int x);
+    char removeCharacter();
+    char removeCharacter(int y, int x);
 
     // GETTERS
     const std::vector<std::string>& getLines() const { return m_lines ; }
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
+    int getLineSize(int line) const { return static_cast<int>(m_lines[line].size()) ; }
 
 };

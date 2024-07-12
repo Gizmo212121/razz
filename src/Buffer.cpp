@@ -1,6 +1,7 @@
 #include "Buffer.h"
 #include "View.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <ncurses.h>
@@ -11,6 +12,10 @@ Buffer::Buffer(const std::string& fileName, View* view)
     if (doesFileExist(fileName))
     {
         readFromFile(fileName);
+    }
+    else
+    {
+        m_lines.push_back("");
     }
 }
 
@@ -34,23 +39,21 @@ void Buffer::readFromFile(const std::string& fileName)
 
 void Buffer::moveCursor(int y, int x)
 {
-    m_cursorY = y;
-    m_cursorX = x;
-    
+    m_cursorY = std::clamp(y, 0, static_cast<int>(m_lines.size()));
+    m_cursorX = std::clamp(x, 0, static_cast<int>(m_lines[m_cursorY].size()));
+
+    m_view->moveCursor(m_cursorY, m_cursorX);
 }
 
-void Buffer::shiftCursorX( int x)
+void Buffer::shiftCursorX(int x)
 {
 
     int minMoveX = std::min(m_cursorX + x, static_cast<int>(m_lines[m_cursorY].size()) - 1);
     int moveX = std::max(0, minMoveX);
 
-    // if (!moveX) { m_lastXSinceYMove = moveX ; }
-    m_lastXSinceYMove = moveX;
+    if (moveX) { m_lastXSinceYMove = moveX ; }
 
-    m_cursorX = moveX;
-
-    move(m_cursorY, m_cursorX);
+    moveCursor(m_cursorY, moveX);
 
     refresh();
 }
@@ -81,13 +84,13 @@ void Buffer::shiftCursorFullRight()
 
 void Buffer::shiftCursorFullLeft()
 {
-    for (int i = 0; i < static_cast<int>(m_lines.size()); i++)
+    for (int i = 0; i < static_cast<int>(m_lines[m_cursorY].size()); i++)
     {
         if (m_lines[m_cursorY][i] != ' ')
         {
             m_cursorX = i;
             m_lastXSinceYMove = i;
-            move(m_cursorY, i);
+            moveCursor(m_cursorY, i);
             break;
         }
 
@@ -133,15 +136,19 @@ void Buffer::insertCharacter(char character)
 
 void Buffer::insertCharacter(char character, int y, int x)
 {
-    m_lines[y].insert(m_lines[y].begin() + x - 1, character);
+    m_lines[y].insert(m_lines[y].begin() + x, character);
 }
 
-void Buffer::removeCharacter()
+char Buffer::removeCharacter()
 {
+    char character = m_lines[m_cursorY][m_cursorX];
     m_lines[m_cursorY].erase(m_cursorX, 1);
+    return character;
 }
 
-void Buffer::removeCharacter(int y, int x)
+char Buffer::removeCharacter(int y, int x)
 {
-    m_lines[y].erase(x - 1, 1);
+    char character = m_lines[m_cursorY][m_cursorX];
+    m_lines[y].erase(std::max(0, x), 1);
+    return character;
 }

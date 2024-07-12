@@ -83,6 +83,12 @@ void InputController::handleNormalModeInput()
         case CTRL_R:
             m_editor->commandQueue().execute<RedoCommand>(1);
             break;
+        case x:
+            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, false, 0);
+            break;
+        case X:
+            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, true, 0);
+            break;
         default:
         {
             if (getch >= '0' && getch <= '9')
@@ -95,9 +101,9 @@ void InputController::handleNormalModeInput()
             }
             else
             {
-                // clear();
-                // move(0, 0);
-                // printw("You printed: %c with integer code: %d", getch, getch);
+                clear();
+                move(0, 0);
+                printw("You printed: %c with integer code: %d", getch, getch);
             }
 
             break;
@@ -171,7 +177,7 @@ void InputController::handleInsertModeInput()
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
             break;
         case BACKSPACE:
-            // m_editor->commandQueue().execute<RemoveCharacterSendCursorLeftCommand>(1);
+            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, true, -1);
             break;
         default:
             m_editor->commandQueue().execute<InsertCharacterCommand>(1, getch);
