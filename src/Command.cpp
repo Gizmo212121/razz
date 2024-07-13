@@ -14,6 +14,10 @@ void SetModeCommand::undo() {}
 bool SetModeCommand::execute()
 {
     m_editor->setMode(m_mode);
+
+    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    m_buffer->moveCursor(cursorPos.first, cursorPos.second + m_cursorOffset);
+
     return false;
 }
 
@@ -83,7 +87,7 @@ bool CursorFullBottomCommand::execute()
 
 void InsertCharacterCommand::redo()
 {
-    m_buffer->insertCharacter(m_character, m_y, m_x);
+    m_buffer->insertCharacter(m_character, m_y, m_x - 1);
 
     m_buffer->moveCursor(m_y, m_x);
 
@@ -91,7 +95,7 @@ void InsertCharacterCommand::redo()
 }
 void InsertCharacterCommand::undo()
 {
-    m_buffer->removeCharacter(m_y, m_x);
+    m_buffer->removeCharacter(m_y, m_x - 1);
 
     m_buffer->moveCursor(m_y, m_x - 1);
 
@@ -130,6 +134,7 @@ bool RemoveCharacterCommand::execute()
     if (m_buffer->getLineSize(m_y) <= 0) { return false; }
 
     m_character = m_buffer->removeCharacter(m_y, m_x + m_cursorDifferential);
+
     m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, m_buffer->getLineSize(m_y) - 1));
     m_view->displayCurrentLine(m_y);
 

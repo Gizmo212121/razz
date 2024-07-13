@@ -50,13 +50,14 @@ class SetModeCommand : public Command
 {
 private:
     MODE m_mode;
+    int m_cursorOffset;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    SetModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, MODE mode)
-        : Command(editor, buffer, view, commandQueue), m_mode(mode) {}
+    SetModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, MODE mode, int offset)
+        : Command(editor, buffer, view, commandQueue), m_mode(mode), m_cursorOffset(offset) {}
 };
 
 class MoveCursorXCommand : public Command

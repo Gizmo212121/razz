@@ -44,10 +44,13 @@ void InputController::handleNormalModeInput()
             break;
         case COLON:
             clearRepetitionBuffer();
-            m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE, 0);
             break;
         case j:
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case a:
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
             break;
         case h:
             m_editor->commandQueue().execute<MoveCursorXCommand>(atoi(m_repetitionBuffer.c_str()), -1);
@@ -117,17 +120,17 @@ void InputController::handleCommandModeInput()
 
     if (getch == CTRL_C)
     {
-        m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+        m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
     }
 
     switch (getch)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
             m_commandBuffer.clear();
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
             m_commandBuffer.clear();
             break;
         case ENTER:
@@ -140,7 +143,7 @@ void InputController::handleCommandModeInput()
             {
                 printw("Not an editor command: %s", m_commandBuffer.c_str());
                 m_commandBuffer.clear();
-                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
             }
 
             break;
@@ -149,7 +152,7 @@ void InputController::handleCommandModeInput()
         {
             if (m_commandBuffer == "")
             {
-                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
             }
             else
             {
@@ -171,10 +174,10 @@ void InputController::handleInsertModeInput()
     switch (getch)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE);
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
             break;
         case BACKSPACE:
             m_editor->commandQueue().execute<RemoveCharacterCommand>(1, true, -1);

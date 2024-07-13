@@ -16,7 +16,7 @@ class CommandQueue
 
 private:
 
-    const size_t m_maxCommandHistory = 100;
+    const size_t m_maxCommandHistory = 1000;
     size_t m_currentCommandCount = 0;
     size_t m_undoesSinceChange = 0;
     std::deque<std::unique_ptr<Command>> m_commands;

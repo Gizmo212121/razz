@@ -148,7 +148,7 @@ char Buffer::removeCharacter()
 
 char Buffer::removeCharacter(int y, int x)
 {
-    char character = m_lines[m_cursorY][m_cursorX];
+    char character = m_lines[y][x];
     m_lines[y].erase(std::max(0, x), 1);
     return character;
 }

@@ -1,7 +1,8 @@
 #pragma once
 
+#include "GapBuffer.h"
+
 #include <string>
-#include <vector>
 
 class View;
 
@@ -13,7 +14,7 @@ private:
     View* m_view;
 
     std::string m_fileName;
-    std::vector<std::string> m_lines;
+    std::vector<GapBuffer> m_lines;
     int m_cursorX;
     int m_cursorY;
     int m_lastXSinceYMove;
