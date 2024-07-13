@@ -2,8 +2,6 @@
 
 #include "GapBuffer.h"
 
-#include <string>
-
 class View;
 
 class Buffer
@@ -43,9 +41,9 @@ public:
     char removeCharacter(int y, int x);
 
     // GETTERS
-    const std::vector<std::string>& getLines() const { return m_lines ; }
+    const std::vector<GapBuffer>& getLines() const { return m_lines ; }
+    const GapBuffer& getGapBuffer(int y) const { return m_lines[y]; }
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
-    int getLineSize(int line) const { return static_cast<int>(m_lines[line].size()) ; }
 
 };

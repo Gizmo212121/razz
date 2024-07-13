@@ -131,11 +131,14 @@ bool RemoveCharacterCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    if (m_buffer->getLineSize(m_y) <= 0) { return false; }
+    // if (m_buffer->getLineSize(m_y) <= 0) { return false; }
+    if (m_buffer->getGapBuffer(m_y).lineSize() <= 0) { return false; }
 
     m_character = m_buffer->removeCharacter(m_y, m_x + m_cursorDifferential);
 
-    m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, m_buffer->getLineSize(m_y) - 1));
+    // m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, m_buffer->getLineSize(m_y) - 1));
+    m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, static_cast<int>(m_buffer->getGapBuffer(m_y).lineSize()) - 1));
+
     m_view->displayCurrentLine(m_y);
 
     return true;

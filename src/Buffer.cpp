@@ -15,7 +15,7 @@ Buffer::Buffer(const std::string& fileName, View* view)
     }
     else
     {
-        m_lines.push_back("");
+        m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize));
     }
 }
 
@@ -33,14 +33,14 @@ void Buffer::readFromFile(const std::string& fileName)
 
     while (getline(infile, line))
     {
-        m_lines.push_back(line);
+        m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize, line));
     }
 }
 
 void Buffer::moveCursor(int y, int x)
 {
     m_cursorY = std::clamp(y, 0, static_cast<int>(m_lines.size()));
-    m_cursorX = std::clamp(x, 0, static_cast<int>(m_lines[m_cursorY].size()));
+    m_cursorX = std::clamp(x, 0, static_cast<int>(m_lines[m_cursorY].lineSize()));
 
     m_view->moveCursor(m_cursorY, m_cursorX);
 }
@@ -48,7 +48,7 @@ void Buffer::moveCursor(int y, int x)
 void Buffer::shiftCursorX(int x)
 {
 
-    int minMoveX = std::min(m_cursorX + x, static_cast<int>(m_lines[m_cursorY].size()) - 1);
+    int minMoveX = std::min(m_cursorX + x, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1);
     int moveX = std::max(0, minMoveX);
 
     if (moveX) { m_lastXSinceYMove = moveX ; }
@@ -65,7 +65,7 @@ void Buffer::shiftCursorY(int y)
 
     m_cursorY = moveY;
 
-    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].size() - 1), m_lastXSinceYMove);
+    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].lineSize() - 1), m_lastXSinceYMove);
     m_cursorX = std::max(0, minCursorX);
 
     move(m_cursorY, m_cursorX);
@@ -75,7 +75,7 @@ void Buffer::shiftCursorY(int y)
 
 void Buffer::shiftCursorFullRight()
 {
-    m_cursorX = static_cast<int>(m_lines[m_cursorY].size()) - 1;
+    m_cursorX = static_cast<int>(m_lines[m_cursorY].lineSize()) - 1;
     m_lastXSinceYMove = m_cursorX;
     move(m_cursorY, m_cursorX);
 
@@ -84,7 +84,7 @@ void Buffer::shiftCursorFullRight()
 
 void Buffer::shiftCursorFullLeft()
 {
-    for (int i = 0; i < static_cast<int>(m_lines[m_cursorY].size()); i++)
+    for (int i = 0; i < static_cast<int>(m_lines[m_cursorY].lineSize()); i++)
     {
         if (m_lines[m_cursorY][i] != ' ')
         {
@@ -106,7 +106,7 @@ void Buffer::shiftCursorFullTop()
 {
     m_cursorY = 0;
 
-    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].size() - 1), m_lastXSinceYMove);
+    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].lineSize() - 1), m_lastXSinceYMove);
     m_cursorX = std::max(0, minCursorX);
 
     move(m_cursorY, m_cursorX);
@@ -118,7 +118,7 @@ void Buffer::shiftCursorFullBottom()
 {
     m_cursorY = static_cast<int>(m_lines.size()) - 1;
 
-    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].size() - 1), m_lastXSinceYMove);
+    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].lineSize() - 1), m_lastXSinceYMove);
     m_cursorX = std::max(0, minCursorX);
 
     move(m_cursorY, m_cursorX);
@@ -128,27 +128,37 @@ void Buffer::shiftCursorFullBottom()
 
 void Buffer::insertCharacter(char character)
 {
-    m_lines[m_cursorY].insert(m_lines[m_cursorY].begin() + m_cursorX, character);
+    // m_lines[m_cursorY].insert(m_lines[m_cursorY].begin() + m_cursorX, character);
+    //
+    // m_cursorX += 1;
+    // move(m_cursorY, m_cursorX);
 
-    m_cursorX += 1;
-    move(m_cursorY, m_cursorX);
+    m_lines[m_cursorY].insertChar(character);
+    moveCursor(m_cursorY, m_cursorX + 1);
 }
 
 void Buffer::insertCharacter(char character, int y, int x)
 {
-    m_lines[y].insert(m_lines[y].begin() + x, character);
+    // m_lines[y].insert(m_lines[y].begin() + x, character);
+
+    m_lines[y].insertChar(character);
 }
 
 char Buffer::removeCharacter()
 {
-    char character = m_lines[m_cursorY][m_cursorX];
-    m_lines[m_cursorY].erase(m_cursorX, 1);
+    // char character = m_lines[m_cursorY][m_cursorX];
+    // m_lines[m_cursorY].erase(m_cursorX, 1);
+    // return character;
+
+    char character = m_lines[m_cursorY].deleteChar();
     return character;
+
 }
 
 char Buffer::removeCharacter(int y, int x)
 {
-    char character = m_lines[y][x];
-    m_lines[y].erase(std::max(0, x), 1);
+    // char character = m_lines[y][x];
+    // m_lines[y].erase(std::max(0, x), 1);
+    char character = m_lines[y].deleteChar();
     return character;
 }

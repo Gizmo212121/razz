@@ -2,10 +2,20 @@
 
 #include <cstring>
 #include <iostream>
+#include <cassert>
 
 GapBuffer::GapBuffer(int initialSize)
     : m_buffer(std::vector<char>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)
 {
+}
+
+GapBuffer::GapBuffer(int initialSize, const std::string& line)
+    : m_buffer(std::vector<char>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)
+{
+    for (char character : line)
+    {
+        insertChar(character);
+    }
 }
 
 void GapBuffer::left()
@@ -92,4 +102,18 @@ void GapBuffer::printFullGapBuffer() const
     // std::cout << "After last element: " << m_buffer[m_buffer.size()];
 
     std::cout << std::endl;
+}
+
+char GapBuffer::operator[](size_t index) const
+{
+    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex - 1);
+
+    if (index < m_preGapIndex)
+    {
+        return m_buffer[index];
+    }
+    else
+    {
+        return m_buffer[index + m_postGapIndex - m_preGapIndex];
+    }
 }
