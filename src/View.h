@@ -17,5 +17,6 @@ public:
 
     void display();
     void displayCurrentLine(int y);
+    void displayCurrentLineGapBuffer(int y);
 
 };

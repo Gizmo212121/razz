@@ -30,15 +30,16 @@ public:
 
     void shiftCursorX(int x);
     void shiftCursorY(int y);
+
+    void shiftCursorXWithoutGapBuffer(int x, bool render = true);
+
     void shiftCursorFullRight();
     void shiftCursorFullLeft();
     void shiftCursorFullTop();
     void shiftCursorFullBottom();
 
     void insertCharacter(char character);
-    void insertCharacter(char character, int y, int x);
-    char removeCharacter();
-    char removeCharacter(int y, int x);
+    char removeCharacter(bool cursorHeadingLeft = true);
 
     // GETTERS
     const std::vector<GapBuffer>& getLines() const { return m_lines ; }

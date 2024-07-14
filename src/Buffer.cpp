@@ -31,55 +31,116 @@ void Buffer::readFromFile(const std::string& fileName)
 
     std::string line;
 
+    int lineIter = 0;
     while (getline(infile, line))
     {
         m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize, line));
+        while (m_lines[lineIter].preGapIndex() > 0) { m_lines[lineIter].left(); }
+        lineIter++;
     }
 }
 
 void Buffer::moveCursor(int y, int x)
 {
     m_cursorY = std::clamp(y, 0, static_cast<int>(m_lines.size()));
-    m_cursorX = std::clamp(x, 0, static_cast<int>(m_lines[m_cursorY].lineSize()));
+
+    int moveX = std::clamp(x, 0, static_cast<int>(m_lines[m_cursorY].lineSize()));
+
+    if (moveX == m_cursorX) { return; }
+
+
+    int relativeDistance = moveX - m_cursorX;
+
+    if (relativeDistance > 0)
+    {
+        for (int i = 0; i < relativeDistance; i++) { m_lines[m_cursorY].right(); }
+    }
+    else
+    {
+        for (int i = 0; i < abs(relativeDistance); i++) { m_lines[m_cursorY].left(); }
+    }
+
+    m_cursorX = moveX;
+    m_lastXSinceYMove = moveX;
 
     m_view->moveCursor(m_cursorY, m_cursorX);
+    m_view->displayCurrentLine(m_cursorY);
 }
 
 void Buffer::shiftCursorX(int x)
 {
 
-    int minMoveX = std::min(m_cursorX + x, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1);
-    int moveX = std::max(0, minMoveX);
+    int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1));
 
-    if (moveX) { m_lastXSinceYMove = moveX ; }
+    if (moveX == m_cursorX) { return; }
 
-    moveCursor(m_cursorY, moveX);
+    m_cursorX = moveX;
+    m_lastXSinceYMove = moveX;
 
-    refresh();
+    if (x > 0)
+    {
+        for (int i = 0; i < x; i++) { m_lines[m_cursorY].right(); }
+    }
+    else
+    {
+        for (int i = 0; i < abs(x); i++) { m_lines[m_cursorY].left(); }
+    }
+
+    // moveCursor(m_cursorY, moveX);
+    m_view->moveCursor(m_cursorY, m_cursorX);
+    m_view->displayCurrentLine(m_cursorY);
 }
 
 void Buffer::shiftCursorY(int y)
 {
-    int minMoveY = std::min(m_cursorY + y, static_cast<int>(m_lines.size()) - 1);
-    int moveY = std::max(minMoveY, 0);
+    m_cursorY = std::clamp(m_cursorY + y, 0, static_cast<int>(m_lines.size()) - 1);
 
-    m_cursorY = moveY;
+    int moveX = std::clamp(m_lastXSinceYMove, 0, std::max(0, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1));
 
-    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].lineSize() - 1), m_lastXSinceYMove);
-    m_cursorX = std::max(0, minCursorX);
+    int relativeMoveX = moveX - m_lines[m_cursorY].preGapIndex();
 
-    move(m_cursorY, m_cursorX);
+    if (relativeMoveX == 0) 
+    { 
+        m_view->moveCursor(m_cursorY, m_cursorX);
+        m_view->displayCurrentLine(m_cursorY);
+        m_cursorX = moveX;
+        return; 
+    }
 
-    refresh();
+    m_cursorX = moveX;
+
+    if (relativeMoveX > 0)
+    {
+        for (int i = 0; i < relativeMoveX; i++) { m_lines[m_cursorY].right(); }
+    }
+    else
+    {
+        for (int i = 0; i < abs(relativeMoveX); i++) { m_lines[m_cursorY].left(); }
+    }
+
+    // moveCursor(m_cursorY, moveX);
+    m_view->moveCursor(m_cursorY, m_cursorX);
+    m_view->displayCurrentLine(m_cursorY);
+}
+
+void Buffer::shiftCursorXWithoutGapBuffer(int x, bool render)
+{
+
+    int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1));
+
+    if (moveX == m_cursorX) { return; }
+
+    m_cursorX = moveX;
+    m_lastXSinceYMove = moveX;
+
+    // moveCursor(m_cursorY, moveX);
+    m_view->moveCursor(m_cursorY, m_cursorX);
+    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
 void Buffer::shiftCursorFullRight()
 {
-    m_cursorX = static_cast<int>(m_lines[m_cursorY].lineSize()) - 1;
-    m_lastXSinceYMove = m_cursorX;
-    move(m_cursorY, m_cursorX);
-
-    refresh();
+    shiftCursorX(static_cast<int>(m_lines[m_cursorY].lineSize()) - 1 - m_cursorX);
 }
 
 void Buffer::shiftCursorFullLeft()
@@ -88,77 +149,59 @@ void Buffer::shiftCursorFullLeft()
     {
         if (m_lines[m_cursorY][i] != ' ')
         {
-            m_cursorX = i;
-            m_lastXSinceYMove = i;
             moveCursor(m_cursorY, i);
             break;
         }
 
-        m_cursorX = 0;
-        m_lastXSinceYMove = 0;
-        move(m_cursorY, 0);
+        moveCursor(m_cursorY, 0);
     }
-
-    refresh();
 }
 
 void Buffer::shiftCursorFullTop()
 {
-    m_cursorY = 0;
-
-    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].lineSize() - 1), m_lastXSinceYMove);
-    m_cursorX = std::max(0, minCursorX);
-
-    move(m_cursorY, m_cursorX);
-
-    refresh();
+    shiftCursorY(- m_cursorY);
 }
 
 void Buffer::shiftCursorFullBottom()
 {
-    m_cursorY = static_cast<int>(m_lines.size()) - 1;
-
-    int minCursorX = std::min(static_cast<int>(m_lines[m_cursorY].lineSize() - 1), m_lastXSinceYMove);
-    m_cursorX = std::max(0, minCursorX);
-
-    move(m_cursorY, m_cursorX);
-
-    refresh();
+    int fullBottomIndex = std::max(0, static_cast<int>(m_lines.size() - 1));
+    shiftCursorY(fullBottomIndex - m_cursorY);
 }
 
 void Buffer::insertCharacter(char character)
 {
-    // m_lines[m_cursorY].insert(m_lines[m_cursorY].begin() + m_cursorX, character);
-    //
-    // m_cursorX += 1;
-    // move(m_cursorY, m_cursorX);
-
     m_lines[m_cursorY].insertChar(character);
-    moveCursor(m_cursorY, m_cursorX + 1);
+    shiftCursorX(1);
+    m_lines[m_cursorY].left();
 }
 
-void Buffer::insertCharacter(char character, int y, int x)
+char Buffer::removeCharacter(bool cursorHeadingLeft)
 {
-    // m_lines[y].insert(m_lines[y].begin() + x, character);
+    if (cursorHeadingLeft)
+    {
+        shiftCursorXWithoutGapBuffer(-1);
 
-    m_lines[y].insertChar(character);
-}
+        char character = m_lines[m_cursorY].getLine()[m_cursorX];
+        m_lines[m_cursorY].deleteChar();
 
-char Buffer::removeCharacter()
-{
-    // char character = m_lines[m_cursorY][m_cursorX];
-    // m_lines[m_cursorY].erase(m_cursorX, 1);
-    // return character;
+        m_view->displayCurrentLine(m_cursorY);
+        return character;
+    }
+    else
+    {
+        m_lines[m_cursorY].right();
 
-    char character = m_lines[m_cursorY].deleteChar();
-    return character;
+        char character = m_lines[m_cursorY].getLine()[m_cursorX];
+        m_lines[m_cursorY].deleteChar();
 
-}
+        int cursorBeforeMove = m_cursorX;
+        shiftCursorXWithoutGapBuffer(0, false);
+        if (m_cursorX != cursorBeforeMove)
+        {
+            m_lines[m_cursorY].left();
+        }
 
-char Buffer::removeCharacter(int y, int x)
-{
-    // char character = m_lines[y][x];
-    // m_lines[y].erase(std::max(0, x), 1);
-    char character = m_lines[y].deleteChar();
-    return character;
+        m_view->displayCurrentLine(m_cursorY);
+        return character;
+    }
 }

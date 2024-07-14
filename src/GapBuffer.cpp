@@ -106,7 +106,7 @@ void GapBuffer::printFullGapBuffer() const
 
 char GapBuffer::operator[](size_t index) const
 {
-    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex - 1);
+    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
 
     if (index < m_preGapIndex)
     {

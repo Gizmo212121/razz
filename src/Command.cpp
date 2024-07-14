@@ -87,7 +87,7 @@ bool CursorFullBottomCommand::execute()
 
 void InsertCharacterCommand::redo()
 {
-    m_buffer->insertCharacter(m_character, m_y, m_x - 1);
+    // m_buffer->insertCharacter(m_character, m_y, m_x - 1);
 
     m_buffer->moveCursor(m_y, m_x);
 
@@ -95,7 +95,7 @@ void InsertCharacterCommand::redo()
 }
 void InsertCharacterCommand::undo()
 {
-    m_buffer->removeCharacter(m_y, m_x - 1);
+    // m_buffer->removeCharacter(m_y, m_x - 1);
 
     m_buffer->moveCursor(m_y, m_x - 1);
 
@@ -113,33 +113,40 @@ bool InsertCharacterCommand::execute()
     return true;
 }
 
-void RemoveCharacterCommand::redo()
+void RemoveCharacterNormalCommand::redo()
 {
-    m_buffer->removeCharacter(m_y, m_x + m_cursorDifferential);
-    m_view->displayCurrentLine(m_y);
-    m_buffer->moveCursor(m_y, m_x - 1);
+    if (m_cursorLeft)
+    {
+        m_buffer->moveCursor(m_y, m_x - 1);
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, m_x);
+    }
+    m_buffer->removeCharacter(m_cursorLeft);
 }
-void RemoveCharacterCommand::undo()
+void RemoveCharacterNormalCommand::undo()
 {
-    m_buffer->insertCharacter(m_character, m_y, m_x + m_cursorDifferential);
-    m_view->displayCurrentLine(m_y);
-    m_buffer->moveCursor(m_y, m_x);
+    if (m_cursorLeft)
+    {
+        m_buffer->moveCursor(m_y, m_x - 1);
+        m_buffer->insertCharacter(m_character);
+        m_view->displayCurrentLine(m_y);
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, m_x);
+        m_buffer->insertCharacter(m_character);
+        m_view->displayCurrentLine(m_y);
+    }
 }
-bool RemoveCharacterCommand::execute()
+bool RemoveCharacterNormalCommand::execute()
 {
     std::pair<int, int> cursorPos = m_buffer->getCursorPos();
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    // if (m_buffer->getLineSize(m_y) <= 0) { return false; }
     if (m_buffer->getGapBuffer(m_y).lineSize() <= 0) { return false; }
-
-    m_character = m_buffer->removeCharacter(m_y, m_x + m_cursorDifferential);
-
-    // m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, m_buffer->getLineSize(m_y) - 1));
-    m_buffer->moveCursor(m_y, std::min(m_x - 1 * m_cursorLeft, static_cast<int>(m_buffer->getGapBuffer(m_y).lineSize()) - 1));
-
-    m_view->displayCurrentLine(m_y);
-
+    m_character = m_buffer->removeCharacter(m_cursorLeft);
     return true;
 }

@@ -53,19 +53,19 @@ void InputController::handleNormalModeInput()
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
             break;
         case h:
-            m_editor->commandQueue().execute<MoveCursorXCommand>(atoi(m_repetitionBuffer.c_str()), -1);
+            m_editor->commandQueue().execute<MoveCursorXCommand>(1, -1 * atoi(m_repetitionBuffer.c_str()));
             clearRepetitionBuffer();
             break;
         case i:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(atoi(m_repetitionBuffer.c_str()), 1);
+            m_editor->commandQueue().execute<MoveCursorYCommand>(1, 1 * atoi(m_repetitionBuffer.c_str()));
             clearRepetitionBuffer();
             break;
         case p:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(atoi(m_repetitionBuffer.c_str()), -1);
+            m_editor->commandQueue().execute<MoveCursorYCommand>(1, -1 * atoi(m_repetitionBuffer.c_str()));
             clearRepetitionBuffer();
             break;
         case APOSTROPHE:
-            m_editor->commandQueue().execute<MoveCursorXCommand>(atoi(m_repetitionBuffer.c_str()), 1);
+            m_editor->commandQueue().execute<MoveCursorXCommand>(1, 1 * atoi(m_repetitionBuffer.c_str()));
             clearRepetitionBuffer();
             break;
         case H:
@@ -87,10 +87,10 @@ void InputController::handleNormalModeInput()
             m_editor->commandQueue().execute<RedoCommand>(1);
             break;
         case x:
-            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, false, 0);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, false);
             break;
         case X:
-            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, true, 0);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, true);
             break;
         default:
         {
@@ -104,9 +104,9 @@ void InputController::handleNormalModeInput()
             }
             else
             {
-                clear();
-                move(0, 0);
-                printw("You printed: %c with integer code: %d", getch, getch);
+                // clear();
+                // move(0, 0);
+                // printw("You printed: %c with integer code: %d", getch, getch);
             }
 
             break;
@@ -180,7 +180,7 @@ void InputController::handleInsertModeInput()
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
             break;
         case BACKSPACE:
-            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, true, -1);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, true);
             break;
         default:
             m_editor->commandQueue().execute<InsertCharacterCommand>(1, getch);

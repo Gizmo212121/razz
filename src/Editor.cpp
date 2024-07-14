@@ -22,20 +22,28 @@ void Editor::run()
 
     while (m_running)
     {
+        // clear();
         // std::pair<int, int> cursorPos = m_buffer.getCursorPos();
-        // move(10, 0);
+        // move(60, 0);
         // printw("Cursor x: %d", cursorPos.second);
-        // move(11, 0);
+        // move(61, 0);
         // printw("Cursor y: %d", cursorPos.first);
-        // move(12, 0);
+        // move(62, 0);
         // printw("Last Cursor x: %d", m_buffer.cursorXBeforeYMove());
+        // move(63, 0);
+        // printw("GB PreIndex: %lu", m_buffer.getGapBuffer(cursorPos.first).preGapIndex());
+        // move(64, 0);
+        // printw("GB PreIndex: %lu", m_buffer.getGapBuffer(cursorPos.first).postGapIndex());
+        // m_view.display();
+        m_view.displayCurrentLineGapBuffer(m_buffer.getCursorPos().first);
         m_inputController.handleInput();
     }
+
+    refresh();
+    endwin();
 }
 
 void Editor::quit()
 {
-    refresh();
-    endwin();
     m_running = false;
 }
