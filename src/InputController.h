@@ -14,6 +14,7 @@ enum KEYS
     QUOTE = 34,
     APOSTROPHE = 39,
     COLON = 58,
+    A = 65,
     H = 72,
     I = 73,
     P = 80,

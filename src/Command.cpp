@@ -87,17 +87,17 @@ bool CursorFullBottomCommand::execute()
 
 void InsertCharacterCommand::redo()
 {
-    // m_buffer->insertCharacter(m_character, m_y, m_x - 1);
-
-    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->moveCursor(m_y, m_x - 1, false);
+    m_buffer->insertCharacter(m_character);
+    m_buffer->shiftCursorX(-1, false);
 
     m_view->displayCurrentLine(m_y);
 }
 void InsertCharacterCommand::undo()
 {
-    // m_buffer->removeCharacter(m_y, m_x - 1);
-
-    m_buffer->moveCursor(m_y, m_x - 1);
+    m_buffer->moveCursor(m_y, m_x, false);
+    m_buffer->removeCharacter();
+    m_buffer->shiftCursorX(-1, false);
 
     m_view->displayCurrentLine(m_y);
 }
@@ -117,26 +117,33 @@ void RemoveCharacterNormalCommand::redo()
 {
     if (m_cursorLeft)
     {
-        m_buffer->moveCursor(m_y, m_x - 1);
+        m_buffer->moveCursor(m_y, m_x);
     }
     else
     {
         m_buffer->moveCursor(m_y, m_x);
     }
+
     m_buffer->removeCharacter(m_cursorLeft);
 }
 void RemoveCharacterNormalCommand::undo()
 {
     if (m_cursorLeft)
     {
-        m_buffer->moveCursor(m_y, m_x - 1);
+        m_buffer->moveCursor(m_y, m_x - 1, false);
         m_buffer->insertCharacter(m_character);
         m_view->displayCurrentLine(m_y);
     }
     else
     {
-        m_buffer->moveCursor(m_y, m_x);
+        m_buffer->moveCursor(m_y, m_x, false);
         m_buffer->insertCharacter(m_character);
+
+        if (m_x != static_cast<int>(m_buffer->getGapBuffer(m_y).lineSize()) - 1)
+        {
+            m_buffer->shiftCursorX(-1, false);
+        }
+
         m_view->displayCurrentLine(m_y);
     }
 }
@@ -147,6 +154,8 @@ bool RemoveCharacterNormalCommand::execute()
     m_y = cursorPos.first;
 
     if (m_buffer->getGapBuffer(m_y).lineSize() <= 0) { return false; }
+    if (m_cursorLeft && m_x == 0) { return false; }
+
     m_character = m_buffer->removeCharacter(m_cursorLeft);
     return true;
 }

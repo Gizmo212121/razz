@@ -40,16 +40,13 @@ void Buffer::readFromFile(const std::string& fileName)
     }
 }
 
-void Buffer::moveCursor(int y, int x)
+void Buffer::moveCursor(int y, int x, bool render)
 {
     m_cursorY = std::clamp(y, 0, static_cast<int>(m_lines.size()));
 
     int moveX = std::clamp(x, 0, static_cast<int>(m_lines[m_cursorY].lineSize()));
 
-    if (moveX == m_cursorX) { return; }
-
-
-    int relativeDistance = moveX - m_cursorX;
+    int relativeDistance = moveX - m_lines[y].preGapIndex();
 
     if (relativeDistance > 0)
     {
@@ -64,10 +61,10 @@ void Buffer::moveCursor(int y, int x)
     m_lastXSinceYMove = moveX;
 
     m_view->moveCursor(m_cursorY, m_cursorX);
-    m_view->displayCurrentLine(m_cursorY);
+    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
-void Buffer::shiftCursorX(int x)
+void Buffer::shiftCursorX(int x, bool render)
 {
 
     int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1));
@@ -86,12 +83,11 @@ void Buffer::shiftCursorX(int x)
         for (int i = 0; i < abs(x); i++) { m_lines[m_cursorY].left(); }
     }
 
-    // moveCursor(m_cursorY, moveX);
     m_view->moveCursor(m_cursorY, m_cursorX);
-    m_view->displayCurrentLine(m_cursorY);
+    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
-void Buffer::shiftCursorY(int y)
+void Buffer::shiftCursorY(int y, bool render)
 {
     m_cursorY = std::clamp(m_cursorY + y, 0, static_cast<int>(m_lines.size()) - 1);
 
@@ -118,14 +114,12 @@ void Buffer::shiftCursorY(int y)
         for (int i = 0; i < abs(relativeMoveX); i++) { m_lines[m_cursorY].left(); }
     }
 
-    // moveCursor(m_cursorY, moveX);
     m_view->moveCursor(m_cursorY, m_cursorX);
-    m_view->displayCurrentLine(m_cursorY);
+    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
 void Buffer::shiftCursorXWithoutGapBuffer(int x, bool render)
 {
-
     int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_lines[m_cursorY].lineSize()) - 1));
 
     if (moveX == m_cursorX) { return; }
@@ -171,8 +165,8 @@ void Buffer::shiftCursorFullBottom()
 void Buffer::insertCharacter(char character)
 {
     m_lines[m_cursorY].insertChar(character);
-    shiftCursorX(1);
     m_lines[m_cursorY].left();
+    moveCursor(m_cursorY, m_cursorX + 1);
 }
 
 char Buffer::removeCharacter(bool cursorHeadingLeft)

@@ -87,10 +87,16 @@ void InputController::handleNormalModeInput()
             m_editor->commandQueue().execute<RedoCommand>(1);
             break;
         case x:
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, false);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(atoi(m_repetitionBuffer.c_str()), false);
+            clearRepetitionBuffer();
             break;
         case X:
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, true);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(atoi(m_repetitionBuffer.c_str()), true);
+            clearRepetitionBuffer();
+            break;
+        case A:
+            m_editor->commandQueue().execute<CursorFullRightCommand>(1);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
             break;
         default:
         {

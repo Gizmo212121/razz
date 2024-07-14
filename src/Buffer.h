@@ -26,10 +26,10 @@ public:
 
     Buffer(const std::string& fileName, View* view);
 
-    void moveCursor(int y, int x);
+    void moveCursor(int y, int x, bool render = true);
 
-    void shiftCursorX(int x);
-    void shiftCursorY(int y);
+    void shiftCursorX(int x, bool render = true);
+    void shiftCursorY(int y, bool render = true);
 
     void shiftCursorXWithoutGapBuffer(int x, bool render = true);
 
