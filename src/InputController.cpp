@@ -240,7 +240,7 @@ void InputController::handleReplaceCharMode(int input)
 
                     const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
 
-                    if (static_cast<size_t>(cursorPos.second) == m_editor->buffer().getGapBuffer(cursorPos.first).lineSize()) { break; }
+                    if (static_cast<size_t>(cursorPos.second) == m_editor->buffer().getGapBuffer<char>(cursorPos.first).lineSize()) { break; }
                 }
             }
 

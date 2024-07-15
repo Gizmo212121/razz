@@ -17,16 +17,16 @@ void View::moveCursor(int y, int x)
 
 void View::display()
 {
-    if (!m_buffer->getLines().empty())
+    if (!m_buffer->getLines<char>().empty())
     {
         move(0, 0);
 
-        for (size_t row = 0; row < m_buffer->getLines().size(); row++)
+        for (size_t row = 0; row < m_buffer->getLines<char>().size(); row++)
         {
-            for (size_t column = 0; column < m_buffer->getGapBuffer(row).lineSize(); column++)
+            for (size_t column = 0; column < m_buffer->getGapBuffer<char>(row).lineSize(); column++)
             {
                 move(row, column);
-                addch(m_buffer->getGapBuffer(row)[column]);
+                addch(m_buffer->getGapBuffer<char>(row)[column]);
             }
         }
 
@@ -43,9 +43,9 @@ void View::displayCurrentLine(int y)
     move(y, 0);
     clrtoeol();
 
-    for (size_t column = 0; column < m_buffer->getGapBuffer(y).lineSize(); column++)
+    for (size_t column = 0; column < m_buffer->getGapBuffer<char>(y).lineSize(); column++)
     {
-        addch(m_buffer->getGapBuffer(y)[column]);
+        addch(m_buffer->getGapBuffer<char>(y)[column]);
     }
 
     move(cursorPos.first, cursorPos.second);
@@ -59,11 +59,11 @@ void View::displayCurrentLineGapBuffer(int y)
     move(40, 0);
     clrtoeol();
 
-    for (size_t column = 0; column < m_buffer->getGapBuffer(y).bufferSize(); column++)
+    for (size_t column = 0; column < m_buffer->getGapBuffer<char>(y).bufferSize(); column++)
     {
-        const std::vector<char>& line = m_buffer->getGapBuffer(y).getLine();
-        size_t preIndex = m_buffer->getGapBuffer(y).preGapIndex();
-        size_t postIndex = m_buffer->getGapBuffer(y).postGapIndex();
+        const std::vector<char>& line = m_buffer->getGapBuffer<char>(y).getLine();
+        size_t preIndex = m_buffer->getGapBuffer<char>(y).preGapIndex();
+        size_t postIndex = m_buffer->getGapBuffer<char>(y).postGapIndex();
 
         if (column < preIndex || column >= postIndex)
         {

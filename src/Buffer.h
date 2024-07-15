@@ -12,7 +12,7 @@ private:
     View* m_view;
 
     std::string m_fileName;
-    std::vector<GapBuffer> m_lines;
+    std::vector<GapBuffer<char>> m_lines;
     int m_cursorX;
     int m_cursorY;
     int m_lastXSinceYMove;
@@ -43,8 +43,12 @@ public:
     char replaceCharacter(char character);
 
     // GETTERS
-    const std::vector<GapBuffer>& getLines() const { return m_lines ; }
-    const GapBuffer& getGapBuffer(int y) const { return m_lines[y]; }
+    template <class T>
+    const std::vector<GapBuffer<T>>& getLines() const { return m_lines ; }
+
+    template <class T>
+    const GapBuffer<T>& getGapBuffer(int y) const { return m_lines[y]; }
+
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
 
