@@ -9,7 +9,8 @@ enum MODE
 {
     INSERT_MODE,
     NORMAL_MODE,
-    COMMAND_MODE
+    COMMAND_MODE,
+    REPLACE_CHAR_MODE,
 };
 
 
@@ -182,4 +183,20 @@ private:
 public:
     RemoveCharacterNormalCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool cursorLeft)
         : Command(editor, buffer, view, commandQueue), m_cursorLeft(cursorLeft) {}
+};
+
+class ReplaceCharacterCommand : public Command
+{
+private:
+    char m_character;
+    char m_replacedCharacter = '\0';
+    int m_x = 0;
+    int m_y = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    ReplaceCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character)
+        : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };

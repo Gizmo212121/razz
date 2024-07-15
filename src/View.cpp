@@ -2,6 +2,8 @@
 #include "Buffer.h"
 #include <ncurses.h>
 
+#include <term.h>
+
 View::View(Buffer* buffer)
     : m_buffer(buffer)
 {
@@ -76,4 +78,22 @@ void View::displayCurrentLineGapBuffer(int y)
     move(cursorPos.first, cursorPos.second);
 
     refresh();
+}
+
+void View::normalCursor()
+{
+    putp("\033[2 q");
+    fflush(stdout);
+}
+
+void View::insertCursor()
+{
+    putp("\033[5 q");
+    fflush(stdout);
+}
+
+void View::replaceCursor()
+{
+    putp("\033[3 q");
+    fflush(stdout);
 }

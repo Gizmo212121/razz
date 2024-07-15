@@ -38,8 +38,9 @@ public:
     void shiftCursorFullTop();
     void shiftCursorFullBottom();
 
-    void insertCharacter(char character);
-    char removeCharacter(bool cursorHeadingLeft = true);
+    void insertCharacter(char character, bool render = true);
+    char removeCharacter(bool cursorHeadingLeft = true, bool render = true);
+    char replaceCharacter(char character);
 
     // GETTERS
     const std::vector<GapBuffer>& getLines() const { return m_lines ; }

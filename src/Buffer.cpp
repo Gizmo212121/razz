@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <fstream>
 #include <ncurses.h>
+#include <term.h>
+#include <thread>
 
 Buffer::Buffer(const std::string& fileName, View* view)
     : m_view(view), m_fileName(fileName), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
@@ -162,23 +164,24 @@ void Buffer::shiftCursorFullBottom()
     shiftCursorY(fullBottomIndex - m_cursorY);
 }
 
-void Buffer::insertCharacter(char character)
+void Buffer::insertCharacter(char character, bool render)
 {
     m_lines[m_cursorY].insertChar(character);
     m_lines[m_cursorY].left();
-    moveCursor(m_cursorY, m_cursorX + 1);
+    moveCursor(m_cursorY, m_cursorX + 1, render);
 }
 
-char Buffer::removeCharacter(bool cursorHeadingLeft)
+char Buffer::removeCharacter(bool cursorHeadingLeft, bool render)
 {
     if (cursorHeadingLeft)
     {
-        shiftCursorXWithoutGapBuffer(-1);
+        shiftCursorXWithoutGapBuffer(-1, false);
 
         char character = m_lines[m_cursorY].getLine()[m_cursorX];
         m_lines[m_cursorY].deleteChar();
 
-        m_view->displayCurrentLine(m_cursorY);
+        if (render) { m_view->displayCurrentLine(m_cursorY); }
+
         return character;
     }
     else
@@ -195,7 +198,21 @@ char Buffer::removeCharacter(bool cursorHeadingLeft)
             m_lines[m_cursorY].left();
         }
 
-        m_view->displayCurrentLine(m_cursorY);
+        if (render) { m_view->displayCurrentLine(m_cursorY); }
+
         return character;
     }
+}
+
+char Buffer::replaceCharacter(char character)
+{
+    moveCursor(m_cursorY, m_cursorX + 1);
+    char replacedChar = removeCharacter(true, false);
+
+    insertCharacter(character, false);
+    shiftCursorX(-1, false);
+
+    m_view->displayCurrentLine(m_cursorY);
+
+    return replacedChar;
 }

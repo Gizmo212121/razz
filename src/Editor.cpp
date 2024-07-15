@@ -39,6 +39,7 @@ void Editor::run()
         m_inputController.handleInput();
     }
 
+    m_view.normalCursor();
     refresh();
     endwin();
 }

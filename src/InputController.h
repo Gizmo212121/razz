@@ -30,6 +30,8 @@ enum KEYS
     BACKSPACE = 263,
 };
 
+const int MAX_REPETITION_COUNT = 1000;
+
 class InputController
 {
 
@@ -39,13 +41,18 @@ private:
 
     std::string m_commandBuffer;
     std::string m_repetitionBuffer;
-    bool m_typingIntoRepetitionBuffer;
 
-    void handleNormalModeInput();
-    void handleCommandModeInput();
-    void handleInsertModeInput();
+    int m_previousInput = 0;
 
-    void clearRepetitionBuffer() { m_repetitionBuffer = "1"; m_typingIntoRepetitionBuffer = false; }
+    void handleNormalModeInput(int input);
+    void handleCommandModeInput(int input);
+    void handleInsertModeInput(int input);
+    void handleReplaceCharMode(int input);
+
+    void clearRepetitionBuffer() { m_repetitionBuffer.clear(); }
+    int repetitionCount();
+
+    bool repeatedInput(int input) { return (input == m_previousInput) ;}
 
 public:
 

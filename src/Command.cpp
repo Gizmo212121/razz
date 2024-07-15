@@ -15,8 +15,21 @@ bool SetModeCommand::execute()
 {
     m_editor->setMode(m_mode);
 
-    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_buffer->moveCursor(cursorPos.first, cursorPos.second + m_cursorOffset);
+
+    if (m_mode == INSERT_MODE)
+    {
+        m_view->insertCursor();
+    }
+    else if (m_mode == REPLACE_CHAR_MODE)
+    {
+        m_view->replaceCursor();
+    }
+    else
+    {
+        m_view->normalCursor();
+    }
 
     return false;
 }
@@ -105,7 +118,7 @@ bool InsertCharacterCommand::execute()
 {
     m_buffer->insertCharacter(m_character);
 
-    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
@@ -149,7 +162,7 @@ void RemoveCharacterNormalCommand::undo()
 }
 bool RemoveCharacterNormalCommand::execute()
 {
-    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
@@ -157,5 +170,33 @@ bool RemoveCharacterNormalCommand::execute()
     if (m_cursorLeft && m_x == 0) { return false; }
 
     m_character = m_buffer->removeCharacter(m_cursorLeft);
+    return true;
+}
+
+void ReplaceCharacterCommand::redo()
+{
+    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->replaceCharacter(m_character);
+}
+void ReplaceCharacterCommand::undo()
+{
+    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->replaceCharacter(m_replacedCharacter);
+    m_view->displayCurrentLine(m_y);
+}
+bool ReplaceCharacterCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_x = cursorPos.second;
+    m_y = cursorPos.first;
+
+    m_replacedCharacter = m_buffer->replaceCharacter(m_character);
+
+    if (m_character == m_replacedCharacter) { return false; }
+
+    move(60, 0);
+    printw("REPLACED CHAR: %c", m_replacedCharacter);
+    refresh();
+
     return true;
 }

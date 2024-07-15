@@ -23,8 +23,10 @@ public:
 
     void left();
     void right();
+
     void insertChar(char character);
     char deleteChar();
+
     void grow();
 
     void printFullGapBuffer() const;

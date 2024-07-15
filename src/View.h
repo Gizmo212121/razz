@@ -19,4 +19,8 @@ public:
     void displayCurrentLine(int y);
     void displayCurrentLineGapBuffer(int y);
 
+    void normalCursor();
+    void insertCursor();
+    void replaceCursor();
+
 };

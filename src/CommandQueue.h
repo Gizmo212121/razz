@@ -38,13 +38,17 @@ public:
 
     void printRepetitionQueue() const;
 
+    void overrideRepetitionQueue();
+
     void undo();
     void redo();
 
     template <typename CommandType, typename ... CommandArgs>
     void execute(const int repetition, CommandArgs&&... commandArgs)
     {
-        assert(repetition > 0);
+        assert(repetition >= 0);
+
+        if (repetition == 0) { return; }
 
         bool modifiesBuffer;
 

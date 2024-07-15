@@ -4,38 +4,55 @@
 
 #include <ncurses.h>
 #include <string>
+#include <algorithm>
+
 
 InputController::InputController(Editor* editor)
-    : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer("1"), m_typingIntoRepetitionBuffer(false)
+    : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer("")
 {
+}
+
+int InputController::repetitionCount()
+{
+    int repetitionCount = atoi(m_repetitionBuffer.c_str());
+
+    clearRepetitionBuffer();
+
+    return std::clamp(repetitionCount, 1, MAX_REPETITION_COUNT);
 }
 
 void InputController::handleInput()
 {
+    int input = getch();
+
     if (m_editor->mode() == NORMAL_MODE)
     {
-        handleNormalModeInput();
+        handleNormalModeInput(input);
     }
     else if (m_editor->mode() == COMMAND_MODE)
     {
-        handleCommandModeInput();
+        handleCommandModeInput(input);
     }
     else if (m_editor->mode() == INSERT_MODE)
     {
-        handleInsertModeInput();
+        handleInsertModeInput(input);
+    }
+    else if (m_editor->mode() == REPLACE_CHAR_MODE)
+    {
+        handleReplaceCharMode(input);
     }
     else
     {
         std::cerr << "Unexpected mode: " << m_editor->mode() << std::endl;
         exit(1);
     }
+
+    m_previousInput = input;
 }
 
-void InputController::handleNormalModeInput()
+void InputController::handleNormalModeInput(int input)
 {
-    int getch = getch();
-
-    switch (getch)
+    switch (input)
     {
         case ESCAPE:
             printw("bozo");
@@ -53,20 +70,16 @@ void InputController::handleNormalModeInput()
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
             break;
         case h:
-            m_editor->commandQueue().execute<MoveCursorXCommand>(1, -1 * atoi(m_repetitionBuffer.c_str()));
-            clearRepetitionBuffer();
+            m_editor->commandQueue().execute<MoveCursorXCommand>(1, -1 * repetitionCount());
             break;
         case i:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(1, 1 * atoi(m_repetitionBuffer.c_str()));
-            clearRepetitionBuffer();
+            m_editor->commandQueue().execute<MoveCursorYCommand>(1, 1 * repetitionCount());
             break;
         case p:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(1, -1 * atoi(m_repetitionBuffer.c_str()));
-            clearRepetitionBuffer();
+            m_editor->commandQueue().execute<MoveCursorYCommand>(1, -1 * repetitionCount());
             break;
         case APOSTROPHE:
-            m_editor->commandQueue().execute<MoveCursorXCommand>(1, 1 * atoi(m_repetitionBuffer.c_str()));
-            clearRepetitionBuffer();
+            m_editor->commandQueue().execute<MoveCursorXCommand>(1, 1 * repetitionCount());
             break;
         case H:
             m_editor->commandQueue().execute<CursorFullLeftCommand>(1);
@@ -82,31 +95,40 @@ void InputController::handleNormalModeInput()
             break;
         case u:
             m_editor->commandQueue().execute<UndoCommand>(1);
+
+            // endwin();
+            // m_editor->commandQueue().printRepetitionQueue();
+            // exit(1);
             break;
         case CTRL_R:
             m_editor->commandQueue().execute<RedoCommand>(1);
             break;
         case x:
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(atoi(m_repetitionBuffer.c_str()), false);
-            clearRepetitionBuffer();
+            if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(repetitionCount(), false);
             break;
         case X:
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(atoi(m_repetitionBuffer.c_str()), true);
-            clearRepetitionBuffer();
+            if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(repetitionCount(), true);
             break;
         case A:
             m_editor->commandQueue().execute<CursorFullRightCommand>(1);
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
             break;
+        case r:
+            m_editor->commandQueue().execute<SetModeCommand>(1, REPLACE_CHAR_MODE, 0);
+            break;
         default:
         {
-            if (getch >= '0' && getch <= '9')
+            if (input >= '0' && input <= '9')
             {
-                if (!m_typingIntoRepetitionBuffer && getch == '0' && m_repetitionBuffer == "0") { clearRepetitionBuffer(); break; }
-                else if (!m_typingIntoRepetitionBuffer) { m_repetitionBuffer[0] = static_cast<char>(getch); }
-                else { m_repetitionBuffer.push_back(static_cast<char>(getch)); }
+                m_repetitionBuffer.push_back(static_cast<char>(input));
 
-                m_typingIntoRepetitionBuffer = true;
+                if (m_repetitionBuffer == "0")
+                {
+                    clearRepetitionBuffer();
+                    break;
+                }
             }
             else
             {
@@ -120,16 +142,14 @@ void InputController::handleNormalModeInput()
     }
 }
 
-void InputController::handleCommandModeInput()
+void InputController::handleCommandModeInput(int input)
 {
-    int getch = getch();
-
-    if (getch == CTRL_C)
+    if (input == CTRL_C)
     {
         m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
     }
 
-    switch (getch)
+    switch (input)
     {
         case CTRL_C:
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
@@ -140,7 +160,6 @@ void InputController::handleCommandModeInput()
             m_commandBuffer.clear();
             break;
         case ENTER:
-        {
             if (m_commandBuffer == "q!")
             {
                 m_editor->commandQueue().execute<QuitCommand>(1);
@@ -153,9 +172,7 @@ void InputController::handleCommandModeInput()
             }
 
             break;
-        }
         case BACKSPACE:
-        {
             if (m_commandBuffer == "")
             {
                 m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
@@ -166,18 +183,15 @@ void InputController::handleCommandModeInput()
             }
 
             break;
-        }
         default:
-            m_commandBuffer.push_back(static_cast<char>(getch));
+            m_commandBuffer.push_back(static_cast<char>(input));
             break;
     }
 }
 
-void InputController::handleInsertModeInput()
+void InputController::handleInsertModeInput(int input)
 {
-    int getch = getch();
-
-    switch (getch)
+    switch (input)
     {
         case CTRL_C:
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
@@ -186,11 +200,52 @@ void InputController::handleInsertModeInput()
             m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
             break;
         case BACKSPACE:
+            if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
             m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, true);
             break;
         default:
-            m_editor->commandQueue().execute<InsertCharacterCommand>(1, getch);
+            m_editor->commandQueue().overrideRepetitionQueue();
+            m_editor->commandQueue().execute<InsertCharacterCommand>(1, input);
             break;
 
+    }
+}
+
+void InputController::handleReplaceCharMode(int input)
+{
+    switch (input)
+    {
+        case CTRL_C:
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            break;
+        case ESCAPE:
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            break;
+        default:
+            int repetition = repetitionCount();
+
+            if (repetition == 1)
+            {
+                m_editor->commandQueue().execute<ReplaceCharacterCommand>(1, input);
+            }
+            else
+            {
+                for (int i = 0; i < repetition; i++)
+                {
+                    m_editor->commandQueue().execute<ReplaceCharacterCommand>(1, input);
+                    m_editor->commandQueue().overrideRepetitionQueue();
+
+                    m_editor->commandQueue().execute<MoveCursorXCommand>(1, 1);
+                    m_editor->commandQueue().overrideRepetitionQueue();
+
+                    const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
+
+                    if (static_cast<size_t>(cursorPos.second) == m_editor->buffer().getGapBuffer(cursorPos.first).lineSize()) { break; }
+                }
+            }
+
+            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+
+            break;
     }
 }
