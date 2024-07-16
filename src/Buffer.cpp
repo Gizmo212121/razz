@@ -6,6 +6,7 @@
 #include <fstream>
 #include <ncurses.h>
 #include <term.h>
+#include <thread>
 
 Buffer::Buffer(const std::string& fileName, View* view)
     : m_view(view), m_fileName(fileName), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
@@ -16,7 +17,7 @@ Buffer::Buffer(const std::string& fileName, View* view)
     }
     else
     {
-        m_lines.push_back(GapBuffer<char>(GapBuffer<char>::initialBufferSize));
+        m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize));
     }
 }
 
@@ -35,7 +36,7 @@ void Buffer::readFromFile(const std::string& fileName)
     int lineIter = 0;
     while (getline(infile, line))
     {
-        m_lines.push_back(GapBuffer<char>(GapBuffer<char>::initialBufferSize, line));
+        m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize, line));
         while (m_lines[lineIter].preGapIndex() > 0) { m_lines[lineIter].left(); }
         lineIter++;
     }
@@ -165,7 +166,7 @@ void Buffer::shiftCursorFullBottom()
 
 void Buffer::insertCharacter(char character, bool render)
 {
-    m_lines[m_cursorY].insertItem(character);
+    m_lines[m_cursorY].insertChar(character);
     m_lines[m_cursorY].left();
     moveCursor(m_cursorY, m_cursorX + 1, render);
 }
@@ -177,7 +178,7 @@ char Buffer::removeCharacter(bool cursorHeadingLeft, bool render)
         shiftCursorXWithoutGapBuffer(-1, false);
 
         char character = m_lines[m_cursorY].getLine()[m_cursorX];
-        m_lines[m_cursorY].deleteItem();
+        m_lines[m_cursorY].deleteChar();
 
         if (render) { m_view->displayCurrentLine(m_cursorY); }
 
@@ -188,7 +189,7 @@ char Buffer::removeCharacter(bool cursorHeadingLeft, bool render)
         m_lines[m_cursorY].right();
 
         char character = m_lines[m_cursorY].getLine()[m_cursorX];
-        m_lines[m_cursorY].deleteItem();
+        m_lines[m_cursorY].deleteChar();
 
         int cursorBeforeMove = m_cursorX;
         shiftCursorXWithoutGapBuffer(0, false);
