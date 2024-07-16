@@ -3,8 +3,11 @@
 #include <vector>
 #include <stdio.h>
 #include <string>
+#include <cstring>
+#include <iostream>
+#include <cassert>
 
-class GapBuffer
+class LineGapBuffer
 {
 
 private:
@@ -16,8 +19,8 @@ private:
 
 public:
 
-    GapBuffer(int initialSize);
-    GapBuffer(int initialSize, const std::string& line);
+    LineGapBuffer(int initialSize);
+    LineGapBuffer(int initialSize, const std::string& line);
 
     static inline int initialBufferSize = 128;
 
@@ -29,7 +32,7 @@ public:
 
     void grow();
 
-    void printFullGapBuffer() const;
+    void printFullLineGapBuffer() const;
 
     // Getters
     const std::vector<char>& getLine() const { return m_buffer; }

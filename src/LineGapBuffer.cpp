@@ -1,15 +1,11 @@
-#include "GapBuffer.h"
+#include "LineGapBuffer.h"
 
-#include <cstring>
-#include <iostream>
-#include <cassert>
-
-GapBuffer::GapBuffer(int initialSize)
+LineGapBuffer::LineGapBuffer(int initialSize)
     : m_buffer(std::vector<char>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)
 {
 }
 
-GapBuffer::GapBuffer(int initialSize, const std::string& line)
+LineGapBuffer::LineGapBuffer(int initialSize, const std::string& line)
     : m_buffer(std::vector<char>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)
 {
     for (char character : line)
@@ -18,7 +14,7 @@ GapBuffer::GapBuffer(int initialSize, const std::string& line)
     }
 }
 
-void GapBuffer::left()
+void LineGapBuffer::left()
 {
     if (m_preGapIndex != 0)
     {
@@ -28,7 +24,7 @@ void GapBuffer::left()
     }
 }
 
-void GapBuffer::right()
+void LineGapBuffer::right()
 {
     if (m_postGapIndex < m_bufferSize)
     {
@@ -38,7 +34,7 @@ void GapBuffer::right()
     }
 }
 
-void GapBuffer::insertChar(char character)
+void LineGapBuffer::insertChar(char character)
 {
     if (m_preGapIndex >= m_postGapIndex)
     {
@@ -49,7 +45,7 @@ void GapBuffer::insertChar(char character)
     m_preGapIndex++;
 }
 
-char GapBuffer::deleteChar()
+char LineGapBuffer::deleteChar()
 {
     if (m_preGapIndex > 0)
     {
@@ -61,7 +57,7 @@ char GapBuffer::deleteChar()
     }
 }
 
-void GapBuffer::grow()
+void LineGapBuffer::grow()
 {
     m_buffer.resize(m_bufferSize * 2);
     m_bufferSize *= 2;
@@ -83,7 +79,7 @@ void GapBuffer::grow()
     // std::cout << "PostGapIndex: " << m_postGapIndex << '\n';
 }
 
-void GapBuffer::printFullGapBuffer() const
+void LineGapBuffer::printFullLineGapBuffer() const
 {
     // std::cout << "Buffer size: " << m_buffer.size() << '\n';
     for (size_t index = 0; index < m_buffer.size(); index++)
@@ -104,7 +100,7 @@ void GapBuffer::printFullGapBuffer() const
     std::cout << std::endl;
 }
 
-char GapBuffer::operator[](size_t index) const
+char LineGapBuffer::operator[](size_t index) const
 {
     assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
 

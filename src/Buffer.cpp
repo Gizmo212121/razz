@@ -17,7 +17,7 @@ Buffer::Buffer(const std::string& fileName, View* view)
     }
     else
     {
-        m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize));
+        m_lines.push_back(LineGapBuffer(LineGapBuffer::initialBufferSize));
     }
 }
 
@@ -36,7 +36,7 @@ void Buffer::readFromFile(const std::string& fileName)
     int lineIter = 0;
     while (getline(infile, line))
     {
-        m_lines.push_back(GapBuffer(GapBuffer::initialBufferSize, line));
+        m_lines.push_back(LineGapBuffer(LineGapBuffer::initialBufferSize, line));
         while (m_lines[lineIter].preGapIndex() > 0) { m_lines[lineIter].left(); }
         lineIter++;
     }

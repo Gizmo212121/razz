@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GapBuffer.h"
+#include "LineGapBuffer.h"
 
 class View;
 
@@ -12,7 +12,7 @@ private:
     View* m_view;
 
     std::string m_fileName;
-    std::vector<GapBuffer> m_lines;
+    std::vector<LineGapBuffer> m_lines;
     int m_cursorX;
     int m_cursorY;
     int m_lastXSinceYMove;
@@ -43,8 +43,8 @@ public:
     char replaceCharacter(char character);
 
     // GETTERS
-    const std::vector<GapBuffer>& getLines() const { return m_lines ; }
-    const GapBuffer& getGapBuffer(int y) const { return m_lines[y]; }
+    const std::vector<LineGapBuffer>& getLines() const { return m_lines ; }
+    const LineGapBuffer& getGapBuffer(int y) const { return m_lines[y]; }
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
 
