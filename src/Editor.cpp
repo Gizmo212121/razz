@@ -31,11 +31,12 @@ void Editor::run()
         // move(62, 0);
         // printw("Last Cursor x: %d", m_buffer.cursorXBeforeYMove());
         // move(63, 0);
-        // printw("GB PreIndex: %lu", m_buffer.getGapBuffer(cursorPos.first).preGapIndex());
+        // printw("GB PreIndex: %lu", m_buffer.getLineGapBuffer(cursorPos.first)->preGapIndex());
         // move(64, 0);
-        // printw("GB PostIndex: %lu", m_buffer.getGapBuffer(cursorPos.first).postGapIndex());
+        // printw("GB PostIndex: %lu", m_buffer.getLineGapBuffer(cursorPos.first)->postGapIndex());
+        m_view.displayBackend();
+        // m_view.displayCurrentLineGapBuffer(m_buffer.getCursorPos().first);
         // m_view.display();
-        m_view.displayCurrentLineGapBuffer(m_buffer.getCursorPos().first);
         m_inputController.handleInput();
     }
 

@@ -14,7 +14,6 @@ private:
 
 public:
 
-    FileGapBuffer();
     FileGapBuffer(int initialSize);
     // FileGapBuffer(int initialSize, const std::string& line);
 
@@ -33,7 +32,7 @@ public:
     size_t preGapIndex() const { return m_preGapIndex; }
     size_t postGapIndex() const { return m_postGapIndex; }
     size_t bufferSize() const { return m_bufferSize; }
-    size_t lineSize() const { return m_bufferSize - (m_postGapIndex - m_preGapIndex); }
+    size_t numberOfLines() const { return m_bufferSize - (m_postGapIndex - m_preGapIndex); }
 
     const std::shared_ptr<LineGapBuffer>& operator [](size_t index) const;
 

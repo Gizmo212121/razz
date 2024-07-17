@@ -16,6 +16,8 @@ public:
     void moveCursor(int y, int x);
 
     void display();
+    void displayBackend();
+
     void displayCurrentLine(int y);
     void displayCurrentLineGapBuffer(int y);
 

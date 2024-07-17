@@ -22,7 +22,7 @@ public:
     LineGapBuffer(int initialSize);
     LineGapBuffer(int initialSize, const std::string& line);
 
-    static inline int initialBufferSize = 128;
+    static inline int initialBufferSize = 1;
 
     void left();
     void right();
@@ -42,5 +42,6 @@ public:
     size_t lineSize() const { return m_bufferSize - (m_postGapIndex - m_preGapIndex); }
 
     char operator [](size_t index) const;
+    char at(size_t index) const;
 
 };

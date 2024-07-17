@@ -118,6 +118,9 @@ void InputController::handleNormalModeInput(int input)
         case r:
             m_editor->commandQueue().execute<SetModeCommand>(1, REPLACE_CHAR_MODE, 0);
             break;
+        case o:
+            m_editor->commandQueue().execute<InsertLineCommand>(1);
+            break;
         default:
         {
             if (input >= '0' && input <= '9')
@@ -240,7 +243,7 @@ void InputController::handleReplaceCharMode(int input)
 
                     const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
 
-                    if (static_cast<size_t>(cursorPos.second) == m_editor->buffer().getGapBuffer(cursorPos.first).lineSize()) { break; }
+                    if (static_cast<size_t>(cursorPos.second) == m_editor->buffer().getLineGapBuffer(cursorPos.first)->lineSize()) { break; }
                 }
             }
 

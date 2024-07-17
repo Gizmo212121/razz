@@ -113,3 +113,17 @@ char LineGapBuffer::operator[](size_t index) const
         return m_buffer[index + m_postGapIndex - m_preGapIndex];
     }
 }
+
+char LineGapBuffer::at(size_t index) const
+{
+    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
+
+    if (index < m_preGapIndex)
+    {
+        return m_buffer[index];
+    }
+    else
+    {
+        return m_buffer[index + m_postGapIndex - m_preGapIndex];
+    }
+}

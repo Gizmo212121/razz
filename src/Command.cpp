@@ -1,5 +1,6 @@
 #include "Command.h"
 #include "Editor.h"
+#include "LineGapBuffer.h"
 
 void QuitCommand::redo() {}
 void QuitCommand::undo() {}
@@ -152,7 +153,7 @@ void RemoveCharacterNormalCommand::undo()
         m_buffer->moveCursor(m_y, m_x, false);
         m_buffer->insertCharacter(m_character);
 
-        if (m_x != static_cast<int>(m_buffer->getGapBuffer(m_y).lineSize()) - 1)
+        if (m_x != static_cast<int>(m_buffer->getLineGapBuffer(m_y)->lineSize()) - 1)
         {
             m_buffer->shiftCursorX(-1, false);
         }
@@ -166,7 +167,7 @@ bool RemoveCharacterNormalCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    if (m_buffer->getGapBuffer(m_y).lineSize() <= 0) { return false; }
+    if (m_buffer->getLineGapBuffer(m_y)->lineSize() <= 0) { return false; }
     if (m_cursorLeft && m_x == 0) { return false; }
 
     m_character = m_buffer->removeCharacter(m_cursorLeft);
@@ -197,6 +198,28 @@ bool ReplaceCharacterCommand::execute()
     move(60, 0);
     printw("REPLACED CHAR: %c", m_replacedCharacter);
     refresh();
+
+    return true;
+}
+
+void InsertLineCommand::redo()
+{
+    // m_buffer->moveCursor(m_y, m_x);
+    // m_buffer->replaceCharacter(m_character);
+}
+void InsertLineCommand::undo()
+{
+    // m_buffer->moveCursor(m_y, m_x);
+    // m_buffer->replaceCharacter(m_replacedCharacter);
+    // m_view->displayCurrentLine(m_y);
+}
+bool InsertLineCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_x = cursorPos.second;
+    m_y = cursorPos.first;
+
+    m_buffer->insertLine(true);
 
     return true;
 }

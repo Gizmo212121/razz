@@ -1,9 +1,12 @@
 #pragma once
 
+#include <memory>
+
 class Editor;
 class Buffer;
 class View;
 class CommandQueue;
+class LineGapBuffer;
 
 enum MODE
 {
@@ -199,4 +202,18 @@ private:
 public:
     ReplaceCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character)
         : Command(editor, buffer, view, commandQueue), m_character(character) {}
+};
+
+class InsertLineCommand : public Command
+{
+private:
+    int m_x = 0;
+    int m_y = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    InsertLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+        : Command(editor, buffer, view, commandQueue) {}
 };

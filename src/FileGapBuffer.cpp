@@ -2,11 +2,6 @@
 
 #include <utility>
 
-FileGapBuffer::FileGapBuffer()
-    : m_buffer(std::vector<std::shared_ptr<LineGapBuffer>>()), m_preGapIndex(0), m_postGapIndex(0), m_bufferSize(0)
-{
-}
-
 FileGapBuffer::FileGapBuffer(int initialSize)
     : m_buffer(std::vector<std::shared_ptr<LineGapBuffer>>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)
 {
@@ -18,7 +13,7 @@ void FileGapBuffer::up()
     {
         m_preGapIndex--;
         m_postGapIndex--;
-        m_buffer[m_postGapIndex] = m_buffer[m_preGapIndex];
+        m_buffer[m_postGapIndex] = std::move(m_buffer[m_preGapIndex]);
     }
 }
 
@@ -26,7 +21,7 @@ void FileGapBuffer::down()
 {
     if (m_postGapIndex < m_bufferSize)
     {
-        m_buffer[m_preGapIndex] = m_buffer[m_postGapIndex];
+        m_buffer[m_preGapIndex] = std::move(m_buffer[m_postGapIndex]);
         m_preGapIndex++;
         m_postGapIndex++;
     }
@@ -39,7 +34,7 @@ void FileGapBuffer::insertLine(const std::shared_ptr<LineGapBuffer>& line)
         grow();
     }
 
-    m_buffer[m_preGapIndex] = line;
+    m_buffer[m_preGapIndex] = std::move(line);
     m_preGapIndex++;
 }
 
@@ -79,7 +74,23 @@ void FileGapBuffer::grow()
 
 const std::shared_ptr<LineGapBuffer>& FileGapBuffer::operator [](size_t index) const
 {
-    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
+    // assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
+    try
+    {
+        if (!(index < m_bufferSize - m_postGapIndex + m_preGapIndex))
+        {
+            throw (index);
+        }
+    }
+    catch (size_t)
+    {
+        std::cerr << "Index out of bounds: " << index << '\n';
+        std::cout << "File Gap Buffer Info:\n\t" << "File Size: " << m_bufferSize << "\n\t";
+        std::cout << "Num lines: " << numberOfLines() << "\n\t";
+        std::cout << "Pre index: " << preGapIndex() << "\n\t";
+        std::cout << "Post index: " << postGapIndex() << "\n";
+        exit(1);
+    }
 
     if (index < m_preGapIndex)
     {
