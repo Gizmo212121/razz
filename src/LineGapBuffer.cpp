@@ -67,16 +67,9 @@ void LineGapBuffer::grow()
     char* source = bufferBegin + m_preGapIndex;
     size_t n = m_bufferSize / 2 - m_preGapIndex;
 
-    // std::cout << "Source: " << m_preGapIndex << '\n';
-    // std::cout << "Destination: " << m_bufferSize + m_preGapIndex << '\n';
-    // std::cout << "N: " << n << '\n';
-
     memmove(destination, source, n);
 
     m_postGapIndex = m_bufferSize / 2 + m_preGapIndex;
-
-    // std::cout << "PreGapIndex: " << m_preGapIndex << '\n';
-    // std::cout << "PostGapIndex: " << m_postGapIndex << '\n';
 }
 
 void LineGapBuffer::printFullLineGapBuffer() const

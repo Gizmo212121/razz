@@ -210,10 +210,28 @@ private:
     int m_x = 0;
     int m_y = 0;
 
+    bool m_down;
+
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    InsertLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+    InsertLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool down)
+        : Command(editor, buffer, view, commandQueue), m_down(down) {}
+};
+
+class DeleteLineCommand : public Command
+{
+private:
+    std::shared_ptr<LineGapBuffer> m_line;
+
+    int m_x = 0;
+    int m_y = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    DeleteLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
         : Command(editor, buffer, view, commandQueue) {}
 };

@@ -34,9 +34,10 @@ void Editor::run()
         // printw("GB PreIndex: %lu", m_buffer.getLineGapBuffer(cursorPos.first)->preGapIndex());
         // move(64, 0);
         // printw("GB PostIndex: %lu", m_buffer.getLineGapBuffer(cursorPos.first)->postGapIndex());
-        m_view.displayBackend();
+        // m_view.displayBackend();
         // m_view.displayCurrentLineGapBuffer(m_buffer.getCursorPos().first);
         // m_view.display();
+        // m_view.displayCurrentFileGapBuffer();
         m_inputController.handleInput();
     }
 

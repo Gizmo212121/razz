@@ -20,6 +20,7 @@ public:
 
     void displayCurrentLine(int y);
     void displayCurrentLineGapBuffer(int y);
+    void displayCurrentFileGapBuffer();
 
     void normalCursor();
     void insertCursor();

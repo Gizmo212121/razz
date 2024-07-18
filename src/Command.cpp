@@ -209,9 +209,9 @@ void InsertLineCommand::redo()
 }
 void InsertLineCommand::undo()
 {
-    // m_buffer->moveCursor(m_y, m_x);
-    // m_buffer->replaceCharacter(m_replacedCharacter);
-    // m_view->displayCurrentLine(m_y);
+    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->deleteLine(true);
+    m_buffer->shiftCursorY(-1);
 }
 bool InsertLineCommand::execute()
 {
@@ -219,7 +219,24 @@ bool InsertLineCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    m_buffer->insertLine(true);
+    m_buffer->insertLine(m_down);
+
+    return true;
+}
+
+void DeleteLineCommand::redo()
+{
+}
+void DeleteLineCommand::undo()
+{
+}
+bool DeleteLineCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_x = cursorPos.second;
+    m_y = cursorPos.first;
+
+    m_line =  m_buffer->deleteLine();
 
     return true;
 }

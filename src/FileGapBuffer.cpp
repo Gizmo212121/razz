@@ -29,9 +29,14 @@ void FileGapBuffer::down()
 
 void FileGapBuffer::insertLine(const std::shared_ptr<LineGapBuffer>& line)
 {
-    if (m_preGapIndex >= m_postGapIndex)
+    if (m_preGapIndex == m_postGapIndex)
     {
         grow();
+    }
+    else if (m_preGapIndex > m_postGapIndex)
+    {
+        std::cerr << "Pre gap index bugger than post gap index!\n";
+        exit(1);
     }
 
     m_buffer[m_preGapIndex] = std::move(line);
@@ -42,7 +47,7 @@ std::shared_ptr<LineGapBuffer> FileGapBuffer::deleteLine()
 {
     if (m_preGapIndex > 0)
     {
-        return m_buffer[m_preGapIndex--];
+        return std::move(m_buffer[m_preGapIndex--]);
     }
     else
     {
@@ -56,15 +61,8 @@ void FileGapBuffer::grow()
 
     std::vector<std::shared_ptr<LineGapBuffer>> newBuffer(newSize);
 
-    // std::shared_ptr<LineGapBuffer>* bufferBegin = &(*m_buffer.begin());
-    // std::shared_ptr<LineGapBuffer>* destination = bufferBegin + m_bufferSize / 2 + m_preGapIndex;
-    // std::shared_ptr<LineGapBuffer>* source = bufferBegin + m_preGapIndex;
-    // size_t n = m_bufferSize / 2 - m_preGapIndex;
-
-    // std::move(m_buffer.begin() + m_bufferSize / 2 + m_preGapIndex, )
     std::move(m_buffer.begin(), m_buffer.begin() + m_preGapIndex, newBuffer.begin());
-    std::move(m_buffer.begin() + m_postGapIndex, m_buffer.end(), newBuffer.begin() + newSize / 2);
-    // std::memmove(destination, source, n);
+    std::move(m_buffer.begin() + m_preGapIndex, m_buffer.end(), newBuffer.begin() + newSize / 2 + m_preGapIndex);
 
     m_postGapIndex = newSize / 2 + m_preGapIndex;
 

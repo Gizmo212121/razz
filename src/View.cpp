@@ -99,7 +99,7 @@ void View::displayBackend()
             move(row + 1, 0);
         }
 
-        move(cursorPos.first + m_buffer->getFileGapBuffer().preGapIndex(), cursorPos.second);
+        move(cursorPos.first, cursorPos.second);
 
         refresh();
     }
@@ -107,23 +107,23 @@ void View::displayBackend()
 
 void View::displayCurrentLine(int y)
 {
-    // std::pair<int, int> cursorPos = m_buffer->getCursorPos();
-    // move(y, 0);
-    // clrtoeol();
-    //
-    // for (size_t column = 0; column < m_buffer->getLineGapBuffer(y)->lineSize(); column++)
-    // {
-    //     addch(m_buffer->getLineGapBuffer(y)->at(column));
-    // }
-    //
-    // move(cursorPos.first, cursorPos.second);
-    //
-    // refresh();
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    move(y, 0);
+    clrtoeol();
+
+    for (size_t column = 0; column < m_buffer->getLineGapBuffer(y)->lineSize(); column++)
+    {
+        addch(m_buffer->getLineGapBuffer(y)->at(column));
+    }
+
+    move(cursorPos.first, cursorPos.second);
+
+    refresh();
 }
 
 void View::displayCurrentLineGapBuffer(int y)
 {
-    std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     move(40, 0);
     clrtoeol();
 
@@ -141,6 +141,25 @@ void View::displayCurrentLineGapBuffer(int y)
         {
             addch('_');
         }
+    }
+
+    move(cursorPos.first, cursorPos.second);
+
+    refresh();
+}
+
+void View::displayCurrentFileGapBuffer()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+
+    move(40, 0);
+
+    const std::vector<std::shared_ptr<LineGapBuffer>>& ptrsToLines = m_buffer->getFileGapBuffer().getVectorOfSharedPtrsToLineGapBuffers();
+
+    for (size_t i = 0; i < ptrsToLines.size(); i++)
+    {
+        printw("%p", &ptrsToLines[i]);
+        printw(" | ");
     }
 
     move(cursorPos.first, cursorPos.second);

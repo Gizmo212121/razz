@@ -119,7 +119,15 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<SetModeCommand>(1, REPLACE_CHAR_MODE, 0);
             break;
         case o:
-            m_editor->commandQueue().execute<InsertLineCommand>(1);
+            m_editor->commandQueue().execute<InsertLineCommand>(1, true);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case O:
+            m_editor->commandQueue().execute<InsertLineCommand>(1, false);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case d:
+            m_editor->commandQueue().execute<DeleteLineCommand>(1);
             break;
         default:
         {

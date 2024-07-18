@@ -48,6 +48,8 @@ void Buffer::readFromFile(const std::string& fileName)
     {
         m_file.up();
     }
+
+    m_file.down();
 }
 
 void Buffer::moveCursor(int y, int x, bool render)
@@ -64,6 +66,8 @@ void Buffer::moveCursor(int y, int x, bool render)
     {
         for (int i = 0; i < abs(relativeYDistance); i++) { m_file.up(); }
     }
+
+    if (y == m_file.numberOfLines()) { return; }
 
     m_cursorY = moveY;
 
@@ -245,8 +249,24 @@ void Buffer::insertLine(bool down, bool render)
     m_file.insertLine(std::make_shared<LineGapBuffer>(1));
 
     m_file.up();
-    moveCursor(m_cursorY + 1, m_cursorX, false);
-    m_view->display();
+    moveCursor(m_cursorY + 1 * down, m_cursorX, false);
+
+    if (render) { m_view->display(); }
+}
+
+std::shared_ptr<LineGapBuffer> Buffer::deleteLine(bool render)
+{
+    // shiftCursorY(1);
+    // std::shared_ptr<LineGapBuffer> line = m_file.deleteLine();
+    // shiftCursorY(-1);
+
+    moveCursor(m_cursorY + 1, m_cursorX);
+    std::shared_ptr<LineGapBuffer> line = m_file.deleteLine();
+    moveCursor(m_cursorY - 1, m_cursorX);
+
+    if (render) { m_view->display(); }
+
+    return line;
 }
 
 char Buffer::replaceCharacter(char character)
