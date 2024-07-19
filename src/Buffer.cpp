@@ -163,34 +163,49 @@ void Buffer::shiftCursorXWithoutGapBuffer(int x, bool render)
     if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
-void Buffer::shiftCursorFullRight()
+int Buffer::getXPositionOfFirstCharacter(int y)
 {
-    shiftCursorX(static_cast<int>(m_file[m_cursorY]->lineSize()) - 1 - m_cursorX);
+    y = std::max(0, y);
+
+    for (int i = 0; i < static_cast<int>(m_file[y]->lineSize()); i++)
+    {
+        if (m_file[y]->at(i) != ' ')
+        {
+            return i;
+        }
+    }
+
+    return 0;
 }
 
-void Buffer::shiftCursorFullLeft()
+void Buffer::shiftCursorFullRight(bool render)
+{
+    shiftCursorX(static_cast<int>(m_file[m_cursorY]->lineSize()) - 1 - m_cursorX, render);
+}
+
+void Buffer::shiftCursorFullLeft(bool render)
 {
     for (int i = 0; i < static_cast<int>(m_file[m_cursorY]->lineSize()); i++)
     {
         if (m_file[m_cursorY]->at(i) != ' ')
         {
-            moveCursor(m_cursorY, i);
+            moveCursor(m_cursorY, i, false);
             break;
         }
 
-        moveCursor(m_cursorY, 0);
+        moveCursor(m_cursorY, 0, render);
     }
 }
 
-void Buffer::shiftCursorFullTop()
+void Buffer::shiftCursorFullTop(bool render)
 {
-    shiftCursorY(- m_cursorY);
+    shiftCursorY(- m_cursorY, render);
 }
 
-void Buffer::shiftCursorFullBottom()
+void Buffer::shiftCursorFullBottom(bool render)
 {
     int fullBottomIndex = std::max(0, static_cast<int>(m_file.numberOfLines() - 1));
-    shiftCursorY(fullBottomIndex - m_cursorY);
+    shiftCursorY(fullBottomIndex - m_cursorY, render);
 }
 
 void Buffer::insertCharacter(char character, bool render)

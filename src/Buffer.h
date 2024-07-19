@@ -4,6 +4,8 @@
 
 class View;
 
+const int WHITESPACE_PER_TAB = 4;
+
 class Buffer
 {
 
@@ -35,10 +37,12 @@ public:
 
     void shiftCursorXWithoutGapBuffer(int x, bool render = true);
 
-    void shiftCursorFullRight();
-    void shiftCursorFullLeft();
-    void shiftCursorFullTop();
-    void shiftCursorFullBottom();
+    int getXPositionOfFirstCharacter(int y);
+
+    void shiftCursorFullRight(bool render = true);
+    void shiftCursorFullLeft(bool render = true);
+    void shiftCursorFullTop(bool render = true);
+    void shiftCursorFullBottom(bool render = true);
 
     void insertCharacter(char character, bool render = true);
     char removeCharacter(bool cursorHeadingLeft = true, bool render = true);

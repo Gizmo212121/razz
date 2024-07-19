@@ -40,6 +40,7 @@ public:
 
 
     void overrideRepetitionQueue() { m_commandRepetitions[m_currentCommandCount] = --m_repetitionCounter; };
+    void overrideOverrideRepetitionBuffer() { m_repetitionCounter++; }
 
     void undo();
     void redo();

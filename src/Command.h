@@ -160,7 +160,7 @@ public:
         : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };
 
-class RemoveCharacterCommand : public Command
+class RemoveCharacterNormalCommand : public Command
 {
 private:
     char m_character;
@@ -173,8 +173,26 @@ private:
     void undo() override;
     bool execute() override;
 public:
-    RemoveCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool cursorLeft)
+    RemoveCharacterNormalCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool cursorLeft)
         : Command(editor, buffer, view, commandQueue), m_cursorLeft(cursorLeft) {}
+};
+
+class RemoveCharacterInsertCommand : public Command
+{
+private:
+    char m_character;
+    int m_x = 0;
+    int m_y = 0;
+
+    std::shared_ptr<LineGapBuffer> m_line = nullptr;
+    int m_deletedWhitespaces = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    RemoveCharacterInsertCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+        : Command(editor, buffer, view, commandQueue) {}
 };
 
 class ReplaceCharacterCommand : public Command
@@ -193,7 +211,7 @@ public:
         : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };
 
-class InsertLineCommand : public Command
+class InsertLineNormalCommand : public Command
 {
 private:
     int m_x = 0;
@@ -205,8 +223,22 @@ private:
     void undo() override;
     bool execute() override;
 public:
-    InsertLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool down)
+    InsertLineNormalCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool down)
         : Command(editor, buffer, view, commandQueue), m_down(down) {}
+};
+
+class InsertLineInsertCommand : public Command
+{
+private:
+    int m_x = 0;
+    int m_y = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    InsertLineInsertCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+        : Command(editor, buffer, view, commandQueue) {}
 };
 
 class DeleteLineCommand : public Command
@@ -222,5 +254,19 @@ private:
     bool execute() override;
 public:
     DeleteLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+        : Command(editor, buffer, view, commandQueue) {}
+};
+
+class TabCommand : public Command
+{
+private:
+    int m_x = 0;
+    int m_y = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    TabCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
         : Command(editor, buffer, view, commandQueue) {}
 };
