@@ -93,8 +93,3 @@ void CommandQueue::printRepetitionQueue() const
 
     std::cout << std::endl;
 }
-
-void CommandQueue::overrideRepetitionQueue()
-{
-    m_commandRepetitions[m_currentCommandCount] = --m_repetitionCounter;
-}

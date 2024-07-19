@@ -47,7 +47,7 @@ std::shared_ptr<LineGapBuffer> FileGapBuffer::deleteLine()
 {
     if (m_preGapIndex > 0)
     {
-        return std::move(m_buffer[m_preGapIndex--]);
+        return m_buffer[--m_preGapIndex];
     }
     else
     {

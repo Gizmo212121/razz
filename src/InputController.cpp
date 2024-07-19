@@ -25,19 +25,21 @@ void InputController::handleInput()
 {
     int input = getch();
 
-    if (m_editor->mode() == NORMAL_MODE)
+    MODE currentMode = m_editor->mode();
+
+    if (currentMode == NORMAL_MODE)
     {
         handleNormalModeInput(input);
     }
-    else if (m_editor->mode() == COMMAND_MODE)
+    else if (currentMode == COMMAND_MODE)
     {
         handleCommandModeInput(input);
     }
-    else if (m_editor->mode() == INSERT_MODE)
+    else if (currentMode == INSERT_MODE)
     {
         handleInsertModeInput(input);
     }
-    else if (m_editor->mode() == REPLACE_CHAR_MODE)
+    else if (currentMode == REPLACE_CHAR_MODE)
     {
         handleReplaceCharMode(input);
     }
@@ -48,6 +50,7 @@ void InputController::handleInput()
     }
 
     m_previousInput = input;
+    m_previousMode = currentMode;
 }
 
 void InputController::handleNormalModeInput(int input)
@@ -120,6 +123,7 @@ void InputController::handleNormalModeInput(int input)
             break;
         case o:
             m_editor->commandQueue().execute<InsertLineCommand>(1, true);
+            m_editor->commandQueue().overrideRepetitionQueue();
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
             break;
         case O:

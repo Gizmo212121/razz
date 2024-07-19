@@ -38,7 +38,8 @@ public:
 
     void printRepetitionQueue() const;
 
-    void overrideRepetitionQueue();
+
+    void overrideRepetitionQueue() { m_commandRepetitions[m_currentCommandCount] = --m_repetitionCounter; };
 
     void undo();
     void redo();

@@ -204,14 +204,16 @@ bool ReplaceCharacterCommand::execute()
 
 void InsertLineCommand::redo()
 {
-    // m_buffer->moveCursor(m_y, m_x);
-    // m_buffer->replaceCharacter(m_character);
+    m_buffer->moveCursor(m_y, m_x, false);
+    m_buffer->insertLine(true, false);
+    m_view->displayFromCurrentLineOnwards(m_y);
 }
 void InsertLineCommand::undo()
 {
-    m_buffer->moveCursor(m_y, m_x);
-    m_buffer->deleteLine(true);
-    m_buffer->shiftCursorY(-1);
+    m_buffer->moveCursor(m_y + 1, m_x, false);
+    m_buffer->deleteLine(false);
+    m_buffer->moveCursor(m_y, m_x, false);
+    m_view->displayFromCurrentLineOnwards(m_y);
 }
 bool InsertLineCommand::execute()
 {
@@ -219,16 +221,30 @@ bool InsertLineCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    m_buffer->insertLine(m_down);
+    m_buffer->insertLine(m_down, false);
+    m_view->displayFromCurrentLineOnwards(m_y);
 
     return true;
 }
 
 void DeleteLineCommand::redo()
 {
+    m_buffer->moveCursor(m_y, m_x, false);
+    m_buffer->deleteLine(false);
+    
+    m_view->displayFromCurrentLineOnwards(m_y);
 }
 void DeleteLineCommand::undo()
 {
+    int targetY;
+    if (m_y == 0) { targetY = 0; }
+    else { targetY = m_y; }
+
+    m_buffer->moveCursor(targetY, m_x, false);
+    m_buffer->insertLine(m_line, false, false);
+    m_buffer->moveCursor(m_y, m_x, false);
+
+    m_view->displayFromCurrentLineOnwards(targetY);
 }
 bool DeleteLineCommand::execute()
 {
@@ -236,7 +252,9 @@ bool DeleteLineCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    m_line =  m_buffer->deleteLine();
+    m_line = m_buffer->deleteLine(false);
+
+    m_view->displayFromCurrentLineOnwards(m_y);
 
     return true;
 }

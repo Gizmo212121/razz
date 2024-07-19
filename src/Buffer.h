@@ -45,6 +45,7 @@ public:
     char replaceCharacter(char character);
 
     void insertLine(bool down, bool render = true);
+    void insertLine(std::shared_ptr<LineGapBuffer> line, bool down, bool render = true);
     std::shared_ptr<LineGapBuffer> deleteLine(bool render = true);
 
     // GETTERS

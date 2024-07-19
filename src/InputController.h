@@ -35,6 +35,8 @@ enum KEYS
 
 const int MAX_REPETITION_COUNT = 1000;
 
+#include "Command.h"
+
 class InputController
 {
 
@@ -46,6 +48,7 @@ private:
     std::string m_repetitionBuffer;
 
     int m_previousInput = 0;
+    MODE m_previousMode = NORMAL_MODE;
 
     void handleNormalModeInput(int input);
     void handleCommandModeInput(int input);

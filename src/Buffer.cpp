@@ -254,12 +254,20 @@ void Buffer::insertLine(bool down, bool render)
     if (render) { m_view->display(); }
 }
 
+void Buffer::insertLine(std::shared_ptr<LineGapBuffer> line, bool down, bool render)
+{
+    if (down) { m_file.down(); }
+
+    m_file.insertLine(line);
+
+    m_file.up();
+    moveCursor(m_cursorY + 1 * down, m_cursorX, false);
+
+    if (render) { m_view->display(); }
+}
+
 std::shared_ptr<LineGapBuffer> Buffer::deleteLine(bool render)
 {
-    // shiftCursorY(1);
-    // std::shared_ptr<LineGapBuffer> line = m_file.deleteLine();
-    // shiftCursorY(-1);
-
     moveCursor(m_cursorY + 1, m_cursorX);
     std::shared_ptr<LineGapBuffer> line = m_file.deleteLine();
     moveCursor(m_cursorY - 1, m_cursorX);

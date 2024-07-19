@@ -38,13 +38,6 @@ void View::display()
             }
         }
 
-        move(60, 0);
-        printw("Size: %lu", m_buffer->getFileGapBuffer().bufferSize());
-        move(61, 0);
-        printw("Pre Index: %lu", m_buffer->getFileGapBuffer().preGapIndex());
-        move(62, 0);
-        printw("Post Index: %lu", m_buffer->getFileGapBuffer().postGapIndex());
-
         move(cursorPos.first, cursorPos.second);
 
         refresh();
@@ -121,6 +114,37 @@ void View::displayCurrentLine(int y)
     refresh();
 }
 
+void View::displayFromCurrentLineOnwards(int y)
+{
+    if (m_buffer->getFileGapBuffer().bufferSize())
+    {
+        const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+
+        size_t numLines = m_buffer->getFileGapBuffer().numberOfLines();
+
+        move(y, 0);
+
+        for (size_t row = y; row < numLines; row++)
+        {
+            clrtoeol();
+
+            for (size_t column = 0; column < m_buffer->getLineGapBuffer(row)->lineSize(); column++)
+            {
+                addch(m_buffer->getLineGapBuffer(row)->at(column));
+            }
+
+            move(row + 1, 0);
+        }
+
+        move(numLines, 0);
+        clrtoeol();
+
+        move(cursorPos.first, cursorPos.second);
+
+        refresh();
+    }
+}
+
 void View::displayCurrentLineGapBuffer(int y)
 {
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
@@ -158,7 +182,7 @@ void View::displayCurrentFileGapBuffer()
 
     for (size_t i = 0; i < ptrsToLines.size(); i++)
     {
-        printw("%p", &ptrsToLines[i]);
+        // printw("%p", &ptrsToLines[i]);
         printw(" | ");
     }
 

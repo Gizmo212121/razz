@@ -21,6 +21,7 @@ public:
     void displayCurrentLine(int y);
     void displayCurrentLineGapBuffer(int y);
     void displayCurrentFileGapBuffer();
+    void displayFromCurrentLineOnwards(int y);
 
     void normalCursor();
     void insertCursor();
