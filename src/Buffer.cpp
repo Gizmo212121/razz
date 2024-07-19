@@ -51,7 +51,7 @@ void Buffer::readFromFile(const std::string& fileName)
     }
 }
 
-void Buffer::moveCursor(int y, int x, bool render)
+void Buffer::moveCursor(int y, int x)
 {
     int moveY = std::clamp(y, 0, static_cast<int>(m_file.numberOfLines()));
 
@@ -87,10 +87,9 @@ void Buffer::moveCursor(int y, int x, bool render)
     m_lastXSinceYMove = moveX;
 
     m_view->moveCursor(m_cursorY, m_cursorX);
-    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
-void Buffer::shiftCursorX(int x, bool render)
+void Buffer::shiftCursorX(int x)
 {
 
     int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_file[m_cursorY]->lineSize()) - 1));
@@ -110,10 +109,9 @@ void Buffer::shiftCursorX(int x, bool render)
     }
 
     m_view->moveCursor(m_cursorY, m_cursorX);
-    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
-void Buffer::shiftCursorY(int y, bool render)
+void Buffer::shiftCursorY(int y)
 {
     int moveY = std::clamp(m_cursorY + y, 0, static_cast<int>(m_file.numberOfLines()) - 1);
 
@@ -146,10 +144,9 @@ void Buffer::shiftCursorY(int y, bool render)
     }
 
     m_view->moveCursor(m_cursorY, m_cursorX);
-    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
-void Buffer::shiftCursorXWithoutGapBuffer(int x, bool render)
+void Buffer::shiftCursorXWithoutGapBuffer(int x)
 {
     int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_file[m_cursorY]->lineSize()) - 1));
 
@@ -160,7 +157,6 @@ void Buffer::shiftCursorXWithoutGapBuffer(int x, bool render)
 
     // moveCursor(m_cursorY, moveX);
     m_view->moveCursor(m_cursorY, m_cursorX);
-    if (render) { m_view->displayCurrentLine(m_cursorY); }
 }
 
 int Buffer::getXPositionOfFirstCharacter(int y)
@@ -178,53 +174,51 @@ int Buffer::getXPositionOfFirstCharacter(int y)
     return 0;
 }
 
-void Buffer::shiftCursorFullRight(bool render)
+void Buffer::shiftCursorFullRight()
 {
-    shiftCursorX(static_cast<int>(m_file[m_cursorY]->lineSize()) - 1 - m_cursorX, render);
+    shiftCursorX(static_cast<int>(m_file[m_cursorY]->lineSize()) - 1 - m_cursorX);
 }
 
-void Buffer::shiftCursorFullLeft(bool render)
+void Buffer::shiftCursorFullLeft()
 {
     for (int i = 0; i < static_cast<int>(m_file[m_cursorY]->lineSize()); i++)
     {
         if (m_file[m_cursorY]->at(i) != ' ')
         {
-            moveCursor(m_cursorY, i, false);
+            moveCursor(m_cursorY, i);
             break;
         }
 
-        moveCursor(m_cursorY, 0, render);
+        moveCursor(m_cursorY, 0);
     }
 }
 
-void Buffer::shiftCursorFullTop(bool render)
+void Buffer::shiftCursorFullTop()
 {
-    shiftCursorY(- m_cursorY, render);
+    shiftCursorY(- m_cursorY);
 }
 
-void Buffer::shiftCursorFullBottom(bool render)
+void Buffer::shiftCursorFullBottom()
 {
     int fullBottomIndex = std::max(0, static_cast<int>(m_file.numberOfLines() - 1));
-    shiftCursorY(fullBottomIndex - m_cursorY, render);
+    shiftCursorY(fullBottomIndex - m_cursorY);
 }
 
-void Buffer::insertCharacter(char character, bool render)
+void Buffer::insertCharacter(char character)
 {
     m_file[m_cursorY]->insertChar(character);
     m_file[m_cursorY]->left();
-    moveCursor(m_cursorY, m_cursorX + 1, render);
+    moveCursor(m_cursorY, m_cursorX + 1);
 }
 
-char Buffer::removeCharacter(bool cursorHeadingLeft, bool render)
+char Buffer::removeCharacter(bool cursorHeadingLeft)
 {
     if (cursorHeadingLeft)
     {
-        shiftCursorXWithoutGapBuffer(-1, false);
+        shiftCursorXWithoutGapBuffer(-1);
 
         char character = m_file[m_cursorY]->getLine()[m_cursorX];
         m_file[m_cursorY]->deleteChar();
-
-        if (render) { m_view->displayCurrentLine(m_cursorY); }
 
         return character;
     }
@@ -236,43 +230,37 @@ char Buffer::removeCharacter(bool cursorHeadingLeft, bool render)
         m_file[m_cursorY]->deleteChar();
 
         int cursorBeforeMove = m_cursorX;
-        shiftCursorXWithoutGapBuffer(0, false);
+        shiftCursorXWithoutGapBuffer(0);
         if (m_cursorX != cursorBeforeMove)
         {
             m_file[m_cursorY]->left();
         }
 
-        if (render) { m_view->displayCurrentLine(m_cursorY); }
-
         return character;
     }
 }
 
-void Buffer::insertLine(bool down, bool render)
+void Buffer::insertLine(bool down)
 {
     if (down) { m_file.down(); }
 
     m_file.insertLine(std::make_shared<LineGapBuffer>(1));
 
     m_file.up();
-    moveCursor(m_cursorY + 1 * down, m_cursorX, false);
-
-    if (render) { m_view->display(); }
+    moveCursor(m_cursorY + 1 * down, m_cursorX);
 }
 
-void Buffer::insertLine(std::shared_ptr<LineGapBuffer> line, bool down, bool render)
+void Buffer::insertLine(std::shared_ptr<LineGapBuffer> line, bool down)
 {
     if (down) { m_file.down(); }
 
     m_file.insertLine(line);
 
     m_file.up();
-    moveCursor(m_cursorY + 1 * down, m_cursorX, false);
-
-    if (render) { m_view->display(); }
+    moveCursor(m_cursorY + 1 * down, m_cursorX);
 }
 
-std::shared_ptr<LineGapBuffer> Buffer::deleteLine(bool render)
+std::shared_ptr<LineGapBuffer> Buffer::deleteLine()
 {
     moveCursor(m_cursorY + 1, m_cursorX);
     std::shared_ptr<LineGapBuffer> line = m_file.deleteLine();
@@ -283,24 +271,20 @@ std::shared_ptr<LineGapBuffer> Buffer::deleteLine(bool render)
     }
     else
     {
-        insertLine(true, false);
+        insertLine(true);
         moveCursor(0, 0);
     }
-
-    if (render) { m_view->display(); }
 
     return line;
 }
 
-char Buffer::replaceCharacter(char character, bool render)
+char Buffer::replaceCharacter(char character)
 {
     moveCursor(m_cursorY, m_cursorX + 1);
-    char replacedChar = removeCharacter(true, false);
+    char replacedChar = removeCharacter(true);
 
-    insertCharacter(character, false);
-    shiftCursorX(-1, false);
-
-    if (render) { m_view->displayCurrentLine(m_cursorY); }
+    insertCharacter(character);
+    shiftCursorX(-1);
 
     return replacedChar;
 }

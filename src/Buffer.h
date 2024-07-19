@@ -30,27 +30,27 @@ public:
 
     Buffer(const std::string& fileName, View* view);
 
-    void moveCursor(int y, int x, bool render = true);
+    void moveCursor(int y, int x);
 
-    void shiftCursorX(int x, bool render = true);
-    void shiftCursorY(int y, bool render = true);
+    void shiftCursorX(int x);
+    void shiftCursorY(int y);
 
-    void shiftCursorXWithoutGapBuffer(int x, bool render = true);
+    void shiftCursorXWithoutGapBuffer(int x);
 
     int getXPositionOfFirstCharacter(int y);
 
-    void shiftCursorFullRight(bool render = true);
-    void shiftCursorFullLeft(bool render = true);
-    void shiftCursorFullTop(bool render = true);
-    void shiftCursorFullBottom(bool render = true);
+    void shiftCursorFullRight();
+    void shiftCursorFullLeft();
+    void shiftCursorFullTop();
+    void shiftCursorFullBottom();
 
-    void insertCharacter(char character, bool render = true);
-    char removeCharacter(bool cursorHeadingLeft = true, bool render = true);
-    char replaceCharacter(char character, bool render = true);
+    void insertCharacter(char character);
+    char removeCharacter(bool cursorHeadingLeft = true);
+    char replaceCharacter(char character);
 
-    void insertLine(bool down, bool render = true);
-    void insertLine(std::shared_ptr<LineGapBuffer> line, bool down, bool render = true);
-    std::shared_ptr<LineGapBuffer> deleteLine(bool render = true);
+    void insertLine(bool down);
+    void insertLine(std::shared_ptr<LineGapBuffer> line, bool down);
+    std::shared_ptr<LineGapBuffer> deleteLine();
 
     void writeToFile(const std::string& fileName);
     void saveCurrentFile();
