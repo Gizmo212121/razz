@@ -42,7 +42,7 @@ public:
 
     void insertCharacter(char character, bool render = true);
     char removeCharacter(bool cursorHeadingLeft = true, bool render = true);
-    char replaceCharacter(char character);
+    char replaceCharacter(char character, bool render = true);
 
     void insertLine(bool down, bool render = true);
     void insertLine(std::shared_ptr<LineGapBuffer> line, bool down, bool render = true);

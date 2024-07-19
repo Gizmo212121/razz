@@ -108,11 +108,11 @@ void InputController::handleNormalModeInput(int input)
             break;
         case x:
             if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(repetitionCount(), false);
+            m_editor->commandQueue().execute<RemoveCharacterCommand>(repetitionCount(), false);
             break;
         case X:
             if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(repetitionCount(), true);
+            m_editor->commandQueue().execute<RemoveCharacterCommand>(repetitionCount(), true);
             break;
         case A:
             m_editor->commandQueue().execute<CursorFullRightCommand>(1);
@@ -128,11 +128,15 @@ void InputController::handleNormalModeInput(int input)
             break;
         case O:
             m_editor->commandQueue().execute<InsertLineCommand>(1, false);
+            m_editor->commandQueue().overrideRepetitionQueue();
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
             break;
         case d:
-            m_editor->commandQueue().execute<DeleteLineCommand>(1);
+        {
+            size_t rep = std::min(repetitionCount(), static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()));
+            m_editor->commandQueue().execute<DeleteLineCommand>(rep);
             break;
+        }
         default:
         {
             if (input >= '0' && input <= '9')
@@ -147,9 +151,9 @@ void InputController::handleNormalModeInput(int input)
             }
             else
             {
-                // clear();
-                // move(0, 0);
-                // printw("You printed: %c with integer code: %d", getch, getch);
+                clear();
+                move(0, 0);
+                printw("You printed: %c with integer code: %d", input, input);
             }
 
             break;
@@ -216,7 +220,15 @@ void InputController::handleInsertModeInput(int input)
             break;
         case BACKSPACE:
             if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(1, true);
+            m_editor->commandQueue().execute<RemoveCharacterCommand>(1, true);
+            break;
+        case ENTER:
+            m_editor->commandQueue().execute<InsertLineCommand>(1, true);
+            m_editor->commandQueue().overrideRepetitionQueue();
+            break;
+        case TAB:
+            m_editor->commandQueue().overrideRepetitionQueue();
+            m_editor->commandQueue().execute<InsertCharacterCommand>(4, SPACE);
             break;
         default:
             m_editor->commandQueue().overrideRepetitionQueue();

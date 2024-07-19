@@ -8,9 +8,11 @@ class Editor;
 enum KEYS
 {
     CTRL_C = 3,
+    TAB = 9,
     ENTER = 10,
     CTRL_R = 18,
     ESCAPE = 27,
+    SPACE = 32,
     QUOTE = 34,
     APOSTROPHE = 39,
     COLON = 58,

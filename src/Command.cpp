@@ -127,7 +127,7 @@ bool InsertCharacterCommand::execute()
     return true;
 }
 
-void RemoveCharacterNormalCommand::redo()
+void RemoveCharacterCommand::redo()
 {
     if (m_cursorLeft)
     {
@@ -140,7 +140,7 @@ void RemoveCharacterNormalCommand::redo()
 
     m_buffer->removeCharacter(m_cursorLeft);
 }
-void RemoveCharacterNormalCommand::undo()
+void RemoveCharacterCommand::undo()
 {
     if (m_cursorLeft)
     {
@@ -153,15 +153,12 @@ void RemoveCharacterNormalCommand::undo()
         m_buffer->moveCursor(m_y, m_x, false);
         m_buffer->insertCharacter(m_character);
 
-        if (m_x != static_cast<int>(m_buffer->getLineGapBuffer(m_y)->lineSize()) - 1)
-        {
-            m_buffer->shiftCursorX(-1, false);
-        }
+        m_buffer->shiftCursorX(-1, false);
 
         m_view->displayCurrentLine(m_y);
     }
 }
-bool RemoveCharacterNormalCommand::execute()
+bool RemoveCharacterCommand::execute()
 {
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_x = cursorPos.second;
@@ -181,8 +178,8 @@ void ReplaceCharacterCommand::redo()
 }
 void ReplaceCharacterCommand::undo()
 {
-    m_buffer->moveCursor(m_y, m_x);
-    m_buffer->replaceCharacter(m_replacedCharacter);
+    m_buffer->moveCursor(m_y, m_x, false);
+    m_buffer->replaceCharacter(m_replacedCharacter, false);
     m_view->displayCurrentLine(m_y);
 }
 bool ReplaceCharacterCommand::execute()
@@ -210,7 +207,7 @@ void InsertLineCommand::redo()
 }
 void InsertLineCommand::undo()
 {
-    m_buffer->moveCursor(m_y + 1, m_x, false);
+    m_buffer->moveCursor(m_y + 1 * m_down, m_x, false);
     m_buffer->deleteLine(false);
     m_buffer->moveCursor(m_y, m_x, false);
     m_view->displayFromCurrentLineOnwards(m_y);
@@ -231,7 +228,7 @@ void DeleteLineCommand::redo()
 {
     m_buffer->moveCursor(m_y, m_x, false);
     m_buffer->deleteLine(false);
-    
+
     m_view->displayFromCurrentLineOnwards(m_y);
 }
 void DeleteLineCommand::undo()
@@ -251,6 +248,8 @@ bool DeleteLineCommand::execute()
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_x = cursorPos.second;
     m_y = cursorPos.first;
+
+    if (m_buffer->getFileGapBuffer().numberOfLines() == 1 && m_buffer->getLineGapBuffer(m_y)->lineSize() == 0) { return false; }
 
     m_line = m_buffer->deleteLine(false);
 

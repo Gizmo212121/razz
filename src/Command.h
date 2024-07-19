@@ -171,7 +171,7 @@ public:
         : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };
 
-class RemoveCharacterNormalCommand : public Command
+class RemoveCharacterCommand : public Command
 {
 private:
     char m_character;
@@ -184,7 +184,7 @@ private:
     void undo() override;
     bool execute() override;
 public:
-    RemoveCharacterNormalCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool cursorLeft)
+    RemoveCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool cursorLeft)
         : Command(editor, buffer, view, commandQueue), m_cursorLeft(cursorLeft) {}
 };
 
