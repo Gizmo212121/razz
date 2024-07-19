@@ -1,14 +1,5 @@
 #include "Command.h"
 #include "Editor.h"
-#include "LineGapBuffer.h"
-
-void QuitCommand::redo() {}
-void QuitCommand::undo() {}
-bool QuitCommand::execute()
-{
-    m_editor->quit();
-    return false;
-}
 
 void SetModeCommand::redo() {}
 void SetModeCommand::undo() {}

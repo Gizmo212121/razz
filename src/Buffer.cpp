@@ -1,4 +1,5 @@
 #include "Buffer.h"
+#include "LineGapBuffer.h"
 #include "View.h"
 
 #include <algorithm>
@@ -287,4 +288,30 @@ char Buffer::replaceCharacter(char character, bool render)
     if (render) { m_view->displayCurrentLine(m_cursorY); }
 
     return replacedChar;
+}
+
+void Buffer::writeToFile(const std::string& fileName)
+{
+    std::ofstream fout;
+
+    fout.open(fileName);
+
+    for (size_t row = 0; row < m_file.numberOfLines(); row++)
+    {
+        const std::shared_ptr<LineGapBuffer> lineGapBuffer = m_file[row];
+
+        for (size_t column = 0; column < lineGapBuffer->lineSize(); column++)
+        {
+            fout << lineGapBuffer->at(column);
+        }
+
+        if (row < m_file.numberOfLines() - 1) { fout << '\n'; }
+    }
+
+    fout.close();
+}
+
+void Buffer::saveCurrentFile()
+{
+    writeToFile(m_fileName);
 }

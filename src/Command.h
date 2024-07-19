@@ -39,17 +39,6 @@ public:
 
 };
 
-class QuitCommand : public Command
-{
-private:
-    void redo() override;
-    void undo() override;
-    bool execute() override;
-public:
-    QuitCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
-        : Command(editor, buffer, view, commandQueue) {}
-};
-
 class SetModeCommand : public Command
 {
 private:

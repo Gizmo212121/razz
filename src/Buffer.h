@@ -48,10 +48,17 @@ public:
     void insertLine(std::shared_ptr<LineGapBuffer> line, bool down, bool render = true);
     std::shared_ptr<LineGapBuffer> deleteLine(bool render = true);
 
+    void writeToFile(const std::string& fileName);
+    void saveCurrentFile();
+
+    // SETTERS
+    void setFileName(const std::string& fileName) { m_fileName = fileName; }
+
     // GETTERS
     const FileGapBuffer& getFileGapBuffer() const { return m_file ; }
     const std::shared_ptr<LineGapBuffer>& getLineGapBuffer(int y) const { return m_file[y]; }
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
+    const std::string& fileName() { return m_fileName; }
 
 };

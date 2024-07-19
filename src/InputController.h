@@ -56,6 +56,7 @@ private:
     void handleCommandModeInput(int input);
     void handleInsertModeInput(int input);
     void handleReplaceCharMode(int input);
+    void handleCommandBufferInput();
 
     void clearRepetitionBuffer() { m_repetitionBuffer.clear(); }
     int repetitionCount();

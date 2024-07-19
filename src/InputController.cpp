@@ -4,6 +4,7 @@
 
 #include <ncurses.h>
 #include <string>
+#include <sstream>
 #include <algorithm>
 
 
@@ -57,11 +58,6 @@ void InputController::handleNormalModeInput(int input)
 {
     switch (input)
     {
-        case ESCAPE:
-            printw("bozo");
-            refresh();
-            m_editor->commandQueue().execute<QuitCommand>(1);
-            break;
         case COLON:
             clearRepetitionBuffer();
             m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE, 0);
@@ -179,17 +175,7 @@ void InputController::handleCommandModeInput(int input)
             m_commandBuffer.clear();
             break;
         case ENTER:
-            if (m_commandBuffer == "q!")
-            {
-                m_editor->commandQueue().execute<QuitCommand>(1);
-            }
-            else
-            {
-                printw("Not an editor command: %s", m_commandBuffer.c_str());
-                m_commandBuffer.clear();
-                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
-            }
-
+            handleCommandBufferInput();
             break;
         case BACKSPACE:
             if (m_commandBuffer == "")
@@ -275,4 +261,59 @@ void InputController::handleReplaceCharMode(int input)
 
             break;
     }
+}
+
+void InputController::handleCommandBufferInput()
+{
+    std::istringstream istream(m_commandBuffer);
+
+    std::string currentSubstring;
+
+    while (istream >> currentSubstring)
+    {
+        if (currentSubstring == "q!")
+        {
+            m_editor->quit();
+            break;
+        }
+        else if (currentSubstring == "w")
+        {
+            if (m_editor->buffer().fileName() != "NO_NAME") { m_editor->buffer().saveCurrentFile(); }
+            else { /* TODO: Send signal that no file is set; */ }
+
+            break;
+        }
+        else if (currentSubstring == "wq")
+        {
+            if (m_editor->buffer().fileName() != "NO_NAME") { m_editor->buffer().saveCurrentFile(); }
+            else { /* TODO: Send signal that no file is set; */ }
+
+            m_editor->quit();
+
+            break;
+        }
+        else if (currentSubstring == "write")
+        {
+            std::string fileName;
+            istream >> fileName;
+
+            if (m_editor->buffer().fileName() == "NO_NAME") { m_editor->buffer().setFileName(fileName); }
+
+            m_editor->buffer().writeToFile(fileName);
+
+            break;
+        }
+        else
+        {
+            printw("Not an editor command: %s", m_commandBuffer.c_str());
+            m_commandBuffer.clear();
+            break;
+        }
+    }
+
+    m_commandBuffer.clear();
+
+    m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+
+    return;
 }
