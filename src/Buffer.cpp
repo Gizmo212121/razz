@@ -204,6 +204,28 @@ void Buffer::shiftCursorFullBottom()
     shiftCursorY(fullBottomIndex - m_cursorY);
 }
 
+int Buffer::findCharacterIndex(char character)
+{
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
+    for (size_t i = m_cursorX + 1; i < lineGapBuffer->lineSize(); i++)
+    {
+        if (lineGapBuffer->at(i) == character)
+        {
+            return i;
+        }
+    }
+
+    for (size_t i = m_cursorX - 1; i > 0; i--)
+    {
+        if (lineGapBuffer->at(i) == character)
+        {
+            return i;
+        }
+    }
+
+    return m_cursorX;
+}
+
 void Buffer::insertCharacter(char character)
 {
     m_file[m_cursorY]->insertChar(character);
@@ -260,7 +282,7 @@ void Buffer::insertLine(std::shared_ptr<LineGapBuffer> line, bool down)
     moveCursor(m_cursorY + 1 * down, m_cursorX);
 }
 
-std::shared_ptr<LineGapBuffer> Buffer::deleteLine()
+std::shared_ptr<LineGapBuffer> Buffer::removeLine()
 {
     moveCursor(m_cursorY + 1, m_cursorX);
     std::shared_ptr<LineGapBuffer> line = m_file.deleteLine();
@@ -313,4 +335,100 @@ void Buffer::writeToFile(const std::string& fileName)
 void Buffer::saveCurrentFile()
 {
     writeToFile(m_fileName);
+}
+
+bool Buffer::isCharacterSymbolic(char character)
+{
+    if ((character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z')) { return false; }
+    else { return true; }
+}
+
+int Buffer::beginningNextWordIndex()
+{
+    char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
+
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
+
+    if (isCharacterSymbolic(currentCharacter))
+    {
+        for (size_t index = m_cursorX + 1; index < lineGapBuffer->lineSize(); index++)
+        {
+            char character = lineGapBuffer->at(index);
+            if (!isCharacterSymbolic(character) && character != ' ')
+            {
+                return index;
+            }
+        }
+    }
+    else
+    {
+        bool foundSpaceOrSymbol = false;
+
+        for (size_t index = m_cursorX + 1; index < m_file[m_cursorY]->lineSize(); index++)
+        {
+            char character = lineGapBuffer->at(index);
+
+            if (foundSpaceOrSymbol)
+            {
+                if (!isCharacterSymbolic(character))
+                {
+                    return index;
+                }
+            }
+            else
+            {
+                if (isCharacterSymbolic(character) || character == ' ')
+                {
+                    foundSpaceOrSymbol = true;
+                }
+            }
+        }
+    }
+
+    return m_cursorX;
+}
+
+int Buffer::beginningNextSymbolIndex()
+{
+    char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
+
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
+
+    if (!isCharacterSymbolic(currentCharacter))
+    {
+        for (size_t index = m_cursorX + 1; index < lineGapBuffer->lineSize(); index++)
+        {
+            char character = lineGapBuffer->at(index);
+            if (isCharacterSymbolic(character) && character != ' ')
+            {
+                return index;
+            }
+        }
+    }
+    else
+    {
+        bool foundSpaceOrCharacter = false;
+
+        for (size_t index = m_cursorX + 1; index < m_file[m_cursorY]->lineSize(); index++)
+        {
+            char character = lineGapBuffer->at(index);
+
+            if (foundSpaceOrCharacter)
+            {
+                if (isCharacterSymbolic(character) && character != ' ')
+                {
+                    return index;
+                }
+            }
+            else
+            {
+                if (!isCharacterSymbolic(character) || character == ' ')
+                {
+                    foundSpaceOrCharacter = true;
+                }
+            }
+        }
+    }
+
+    return m_cursorX;
 }

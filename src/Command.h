@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 class Editor;
 class Buffer;
@@ -233,6 +234,10 @@ private:
     int m_x = 0;
     int m_y = 0;
 
+    std::vector<char> m_characters;
+    size_t m_distanceToEndLine;
+    int m_xPositionOfFirstCharacter;
+
     void redo() override;
     void undo() override;
     bool execute() override;
@@ -241,7 +246,7 @@ public:
         : Command(editor, buffer, view, commandQueue) {}
 };
 
-class DeleteLineCommand : public Command
+class RemoveLineCommand : public Command
 {
 private:
     std::shared_ptr<LineGapBuffer> m_line;
@@ -253,7 +258,7 @@ private:
     void undo() override;
     bool execute() override;
 public:
-    DeleteLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+    RemoveLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
         : Command(editor, buffer, view, commandQueue) {}
 };
 
@@ -268,5 +273,40 @@ private:
     bool execute() override;
 public:
     TabCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+        : Command(editor, buffer, view, commandQueue) {}
+};
+
+class FindCharacterCommand : public Command
+{
+private:
+    char m_character;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    FindCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character)
+        : Command(editor, buffer, view, commandQueue), m_character(character) {}
+};
+
+class JumpWordCommand : public Command
+{
+private:
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    JumpWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
+        : Command(editor, buffer, view, commandQueue) {}
+};
+
+class JumpSymbolCommand : public Command
+{
+private:
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    JumpSymbolCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
         : Command(editor, buffer, view, commandQueue) {}
 };

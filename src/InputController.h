@@ -16,14 +16,18 @@ enum KEYS
     QUOTE = 34,
     APOSTROPHE = 39,
     COLON = 58,
+    SEMICOLON = 59,
     A = 65,
     H = 72,
     I = 73,
     O = 79,
     P = 80,
+    W = 87,
     X = 88,
     a = 97,
+    b = 98,
     d = 100,
+    f = 102,
     h = 104,
     i = 105,
     j = 106,
@@ -31,7 +35,9 @@ enum KEYS
     p = 112,
     r = 114,
     u = 117,
+    w = 119,
     x = 120,
+    SPACE_DOT = 250,
     BACKSPACE = 263,
 };
 
@@ -49,6 +55,8 @@ private:
     std::string m_commandBuffer;
     std::string m_repetitionBuffer;
 
+    char m_findCharacter = '\0';
+
     int m_previousInput = 0;
     MODE m_previousMode = NORMAL_MODE;
 
@@ -56,7 +64,10 @@ private:
     void handleCommandModeInput(int input);
     void handleInsertModeInput(int input);
     void handleReplaceCharMode(int input);
+
     void handleCommandBufferInput();
+    void handleDeleteCommands(int input);
+    void handleFindCommand(int input);
 
     void clearRepetitionBuffer() { m_repetitionBuffer.clear(); }
     int repetitionCount();

@@ -57,12 +57,26 @@ void InputController::handleInput()
 
 void InputController::handleNormalModeInput(int input)
 {
+    if (input == COLON)
+    {
+        clearRepetitionBuffer();
+        m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE, 0);
+        return;
+    }
+
+    if (m_commandBuffer == "d")
+    {
+        handleDeleteCommands(input);
+        return;
+    }
+    else if (m_commandBuffer == "f")
+    {
+        handleFindCommand(input);
+        return;
+    }
+
     switch (input)
     {
-        case COLON:
-            clearRepetitionBuffer();
-            m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE, 0);
-            break;
         case j:
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
             break;
@@ -95,10 +109,6 @@ void InputController::handleNormalModeInput(int input)
             break;
         case u:
             m_editor->commandQueue().execute<UndoCommand>(1);
-
-            // endwin();
-            // m_editor->commandQueue().printRepetitionQueue();
-            // exit(1);
             break;
         case CTRL_R:
             m_editor->commandQueue().execute<RedoCommand>(1);
@@ -129,11 +139,20 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
             break;
         case d:
-        {
-            size_t rep = std::min(repetitionCount(), static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()));
-            m_editor->commandQueue().execute<DeleteLineCommand>(rep);
+            m_commandBuffer.push_back('d');
             break;
-        }
+        case f:
+            m_commandBuffer.push_back('f');
+            break;
+        case SEMICOLON:
+            m_editor->commandQueue().execute<FindCharacterCommand>(repetitionCount(), m_findCharacter);
+            break;
+        case w:
+            m_editor->commandQueue().execute<JumpWordCommand>(repetitionCount());
+            break;
+        case W:
+            m_editor->commandQueue().execute<JumpSymbolCommand>(repetitionCount());
+            break;
         default:
         {
             if (input >= '0' && input <= '9')
@@ -318,4 +337,32 @@ void InputController::handleCommandBufferInput()
     m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
 
     return;
+}
+
+void InputController::handleDeleteCommands(int input)
+{
+    size_t rep = std::min(repetitionCount(), static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()));
+
+    switch (input)
+    {
+        case d:
+            m_editor->commandQueue().execute<RemoveLineCommand>(rep);
+            break;
+        default:
+            // TODO: Send signal that command isn't valid
+            break;
+    }
+
+    m_commandBuffer.clear();
+}
+
+void InputController::handleFindCommand(int input)
+{
+    size_t rep = std::min(repetitionCount(), static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()));
+
+    m_editor->commandQueue().execute<FindCharacterCommand>(rep, static_cast<char>(input));
+
+    m_findCharacter = static_cast<char>(input);
+
+    m_commandBuffer.clear();
 }

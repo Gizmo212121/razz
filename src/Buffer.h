@@ -44,13 +44,21 @@ public:
     void shiftCursorFullTop();
     void shiftCursorFullBottom();
 
+    // Finds first occurence of character and returns its index. Searches forwards first, then backwards. If no character found, return original mouse position
+    int findCharacterIndex(char character);
+
+    bool isCharacterSymbolic(char character);
+    int beginningNextWordIndex();
+    int beginningNextSymbolIndex();
+
+
     void insertCharacter(char character);
     char removeCharacter(bool cursorHeadingLeft = true);
     char replaceCharacter(char character);
 
     void insertLine(bool down);
     void insertLine(std::shared_ptr<LineGapBuffer> line, bool down);
-    std::shared_ptr<LineGapBuffer> deleteLine();
+    std::shared_ptr<LineGapBuffer> removeLine();
 
     void writeToFile(const std::string& fileName);
     void saveCurrentFile();
