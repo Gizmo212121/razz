@@ -204,22 +204,28 @@ void Buffer::shiftCursorFullBottom()
     shiftCursorY(fullBottomIndex - m_cursorY);
 }
 
-int Buffer::findCharacterIndex(char character)
+int Buffer::findCharacterIndex(char character, bool findForwards)
 {
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
-    for (size_t i = m_cursorX + 1; i < lineGapBuffer->lineSize(); i++)
+
+    if (findForwards)
     {
-        if (lineGapBuffer->at(i) == character)
+        for (size_t i = m_cursorX + 1; i < lineGapBuffer->lineSize(); i++)
         {
-            return i;
+            if (lineGapBuffer->at(i) == character)
+            {
+                return i;
+            }
         }
     }
-
-    for (size_t i = m_cursorX - 1; i > 0; i--)
+    else
     {
-        if (lineGapBuffer->at(i) == character)
+        for (size_t i = m_cursorX - 1; i > 0; i--)
         {
-            return i;
+            if (lineGapBuffer->at(i) == character)
+            {
+                return i;
+            }
         }
     }
 
@@ -535,11 +541,12 @@ int Buffer::endPreviousWordIndex()
     char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
     bool foundSpaceOrSymbol = false;
-    size_t startingIndex = std::max(0, m_cursorX - 1);
 
-    for (size_t index = startingIndex; index > 0; index--)
+    int startingIndex = std::max(0, m_cursorX - 1);
+    for (int index = startingIndex; index >= -1; index--)
     {
-        char character = lineGapBuffer->at(index);
+        char character = '\0';
+        if (index != -1) { character = lineGapBuffer->at(index); };
 
         if (currentCharacterSymbolic)
         {
@@ -575,11 +582,12 @@ int Buffer::endPreviousSymbolIndex()
     char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
     bool foundSpaceOrCharacter = false;
-    size_t startingIndex = std::max(0, m_cursorX - 1);
 
-    for (size_t index = startingIndex; index > 0; index--)
+    int startingIndex = std::max(0, m_cursorX - 1);
+    for (int index = startingIndex; index >= -1; index--)
     {
-        char character = lineGapBuffer->at(index);
+        char character = 'a';
+        if (index != -1) { character = lineGapBuffer->at(index); }
 
         if (!currentCharacterSymbolic)
         {
@@ -621,7 +629,7 @@ int Buffer::beginningPreviousWordIndex()
     size_t startingIndex = std::max(0, m_cursorX - 2);
     for (int index = startingIndex; index >= -1; index--)
     {
-        char character = 'a';
+        char character = '\0';
         if (index != -1) { character = lineGapBuffer->at(index); }
 
         if (currentCharacterSymbolic)
@@ -676,7 +684,7 @@ int Buffer::beginningPreviousSymbolIndex()
     size_t startingIndex = std::max(0, m_cursorX - 2);
     for (int index = startingIndex; index >= -1; index--)
     {
-        char character = '\0';
+        char character = 'a';
         if (index != -1) { character = lineGapBuffer->at(index); }
 
         if (!currentCharacterSymbolic)

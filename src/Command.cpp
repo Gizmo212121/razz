@@ -1,7 +1,9 @@
 #include "Command.h"
 #include "Buffer.h"
 #include "Editor.h"
+#include "InputController.h"
 #include "LineGapBuffer.h"
+#include <ncurses.h>
 
 void SetModeCommand::redo() {}
 void SetModeCommand::undo() {}
@@ -329,6 +331,11 @@ void InsertLineNormalCommand::redo()
     m_buffer->moveCursor(m_y, m_x);
     m_buffer->insertLine(true);
 
+    for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y); i++)
+    {
+        m_buffer->insertCharacter(' ');
+    }
+
     m_view->displayFromCurrentLineOnwards(m_y);
 }
 void InsertLineNormalCommand::undo()
@@ -502,67 +509,164 @@ bool FindCharacterCommand::execute()
 {
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
 
-    m_buffer->moveCursor(cursorPos.first, m_buffer->findCharacterIndex(m_character));
+    m_buffer->moveCursor(cursorPos.first, m_buffer->findCharacterIndex(m_character, m_searchForward));
 
     return false;
 }
 
-void JumpWordOrSymbolCommand::redo() {}
-void JumpWordOrSymbolCommand::undo() {}
-bool JumpWordOrSymbolCommand::execute()
+void JumpCursorCommand::redo() {}
+void JumpCursorCommand::undo() {}
+bool JumpCursorCommand::execute()
 {
-    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    int cursorY = m_buffer->getCursorPos().first;
 
-    if (!m_jumpToEnd)
+    switch (m_jumpCode)
     {
-        if (m_forward)
+        case JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END:
+            m_buffer->moveCursor(cursorY, m_buffer->endNextWordIndex());
+            break;
+        case JUMP_FORWARD | JUMP_BY_WORD:
+            m_buffer->moveCursor(cursorY, m_buffer->beginningNextWordIndex());
+            break;
+        case JUMP_FORWARD | JUMP_TO_END:
+            m_buffer->moveCursor(cursorY, m_buffer->endNextSymbolIndex());
+            break;
+        case JUMP_FORWARD:
+            m_buffer->moveCursor(cursorY, m_buffer->beginningNextSymbolIndex());
+            break;
+        case JUMP_BY_WORD | JUMP_TO_END:
+            m_buffer->moveCursor(cursorY, m_buffer->endPreviousWordIndex());
+            break;
+        case JUMP_BY_WORD:
+            m_buffer->moveCursor(cursorY, m_buffer->beginningPreviousWordIndex());
+            break;
+        case JUMP_TO_END:
+            m_buffer->moveCursor(cursorY, m_buffer->endPreviousSymbolIndex());
+            break;
+        case 0:
+            m_buffer->moveCursor(cursorY, m_buffer->beginningPreviousSymbolIndex());
+            break;
+        default:
+            exit_curses(0);
+            std::cerr << "Unexpected cursor jump code: " << m_jumpCode << '\n';
+            exit(1);
+    }
+
+    return false;
+}
+
+void JumpCursorDeleteWordCommand::redo()
+{
+    m_buffer->moveCursor(m_y, m_x);
+
+    if (m_differenceX >= 0)
+    {
+        for (int i = 0; i < m_differenceX; i++)
         {
-            if (m_jumpByWord)
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningNextWordIndex());
-            }
-            else
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningNextSymbolIndex());
-            }
-        }
-        else
-        {
-            if (m_jumpByWord)
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningPreviousWordIndex());
-            }
-            else
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningPreviousSymbolIndex());
-            }
+            m_buffer->removeCharacter(false);
         }
     }
     else
     {
-        if (m_forward)
+        m_buffer->moveCursor(m_y, m_x + m_differenceX);
+
+        for (int i = 0; i < - m_differenceX; i++)
         {
-            if (m_jumpByWord)
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->endNextWordIndex());
-            }
-            else
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->endNextSymbolIndex());
-            }
-        }
-        else
-        {
-            if (m_jumpByWord)
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->endPreviousWordIndex());
-            }
-            else
-            {
-                m_buffer->moveCursor(cursorPos.first, m_buffer->endPreviousSymbolIndex());
-            }
+            m_buffer->removeCharacter(false);
         }
     }
 
-    return false;
+    m_view->displayCurrentLine(m_y);
+}
+void JumpCursorDeleteWordCommand::undo()
+{
+    m_buffer->moveCursor(m_y, m_x);
+
+    if (m_differenceX >= 0)
+    {
+        for (int i = 0; i < m_differenceX; i++)
+        {
+            m_buffer->insertCharacter(m_characters[i]);
+        }
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, m_x + m_differenceX);
+
+        for (int i = 0; i < - m_differenceX; i++)
+        {
+            m_buffer->insertCharacter(m_characters[i]);
+        }
+    }
+
+    m_buffer->moveCursor(m_y, m_x);
+
+    m_view->displayCurrentLine(m_y);
+}
+bool JumpCursorDeleteWordCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_x = cursorPos.second;
+    m_y = cursorPos.first;
+
+    int targetX;
+
+    switch (m_jumpCode)
+    {
+        case JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END:
+            targetX = m_buffer->endNextWordIndex();
+            break;
+        case JUMP_FORWARD | JUMP_BY_WORD:
+            targetX = m_buffer->beginningNextWordIndex();
+            break;
+        case JUMP_FORWARD | JUMP_TO_END:
+            targetX = m_buffer->endNextSymbolIndex();
+            break;
+        case JUMP_FORWARD:
+            targetX = m_buffer->beginningNextSymbolIndex();
+            break;
+        case JUMP_BY_WORD | JUMP_TO_END:
+            targetX = m_buffer->endPreviousWordIndex();
+            break;
+        case JUMP_BY_WORD:
+            targetX = m_buffer->beginningPreviousWordIndex();
+            break;
+        case JUMP_TO_END:
+            targetX = m_buffer->endPreviousSymbolIndex();
+            break;
+        case 0:
+            targetX = m_buffer->beginningPreviousSymbolIndex();
+            break;
+        default:
+            exit_curses(0);
+            std::cerr << "Unexpected cursor jump code: " << m_jumpCode << '\n';
+            exit(1);
+    }
+
+    m_differenceX = targetX - m_x;
+
+    if (m_differenceX == 0) { return false; }
+
+    m_characters.reserve(abs(m_differenceX));
+
+    if (m_differenceX >= 0)
+    {
+        for (int i = 0; i < m_differenceX; i++)
+        {
+            m_characters[i] = m_buffer->removeCharacter(false);
+        }
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, targetX);
+
+        for (int i = 0; i < - m_differenceX; i++)
+        {
+            m_characters[i] = m_buffer->removeCharacter(false);
+        }
+    }
+
+    m_view->displayCurrentLine(m_y);
+
+    return true;
 }

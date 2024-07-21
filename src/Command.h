@@ -280,26 +280,45 @@ class FindCharacterCommand : public Command
 {
 private:
     char m_character;
+    bool m_searchForward;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    FindCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character)
-        : Command(editor, buffer, view, commandQueue), m_character(character) {}
+    FindCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, char character, bool forward)
+        : Command(editor, buffer, view, commandQueue), m_character(character), m_searchForward(forward) {}
 };
 
-class JumpWordOrSymbolCommand : public Command
+class JumpCursorCommand : public Command
 {
 private:
-    bool m_forward;
-    bool m_jumpByWord;
-    bool m_jumpToEnd;
+    int m_jumpCode;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    JumpWordOrSymbolCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool forward, bool jumpByWord, bool jumpToEnd)
-        : Command(editor, buffer, view, commandQueue), m_forward(forward), m_jumpByWord(jumpByWord), m_jumpToEnd(jumpToEnd) {}
+    JumpCursorCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, int code)
+        : Command(editor, buffer, view, commandQueue), m_jumpCode(code) {}
+};
+
+class JumpCursorDeleteWordCommand : public Command
+{
+private:
+    int m_x = 0;
+    int m_y = 0;
+
+    std::vector<char> m_characters;
+    int m_jumpCode;
+
+    
+    int m_differenceX;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    JumpCursorDeleteWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, int code)
+        : Command(editor, buffer, view, commandQueue), m_jumpCode(code) {}
 };

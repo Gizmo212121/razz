@@ -44,8 +44,8 @@ public:
     void shiftCursorFullTop();
     void shiftCursorFullBottom();
 
-    // Finds first occurence of character and returns its index. Searches forwards first, then backwards. If no character found, return original mouse position
-    int findCharacterIndex(char character);
+    // Finds first occurence of character and returns its index. If no character found, return original mouse position
+    int findCharacterIndex(char character, bool findForwards);
 
     bool isCharacterSymbolic(char character);
 

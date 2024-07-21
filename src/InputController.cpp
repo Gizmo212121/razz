@@ -79,7 +79,7 @@ void InputController::handleNormalModeInput(int input)
         handleDeleteCommands(input);
         return;
     }
-    else if (m_commandBuffer == "f")
+    else if (m_commandBuffer == "f" || m_commandBuffer == "F")
     {
         handleFindCommand(input);
         return;
@@ -158,32 +158,35 @@ void InputController::handleNormalModeInput(int input)
         case f:
             m_commandBuffer.push_back('f');
             break;
+        case F:
+            m_commandBuffer.push_back('F');
+            break;
         case SEMICOLON:
-            m_editor->commandQueue().execute<FindCharacterCommand>(repetitionCount(), m_findCharacter);
+            m_editor->commandQueue().execute<FindCharacterCommand>(repetitionCount(), m_findCharacter, m_searchedForward);
             break;
         case w:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, true, false);
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, false, false);
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD);
             break;
-        case b:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, true, false);
+        case s:
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_BY_WORD);
             break;
-        case B:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, false, false);
+        case S:
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), 0);
             break;
         case e:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, true, true);
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
             break;
         case E:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, false, true);
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD | JUMP_TO_END);
             break;
-        case n:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, true, true);
+        case q:
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_BY_WORD | JUMP_TO_END);
             break;
-        case N:
-            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, false, true);
+        case Q:
+            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_TO_END);
             break;
         default:
         {
@@ -199,9 +202,9 @@ void InputController::handleNormalModeInput(int input)
             }
             else
             {
-                // clear();
-                // move(0, 0);
-                // printw("You printed: %c with integer code: %d", input, input);
+                clear();
+                move(0, 0);
+                printw("You printed: %c with integer code: %d", input, input);
             }
 
             break;
@@ -269,6 +272,13 @@ void InputController::handleInsertModeInput(int input)
             m_editor->commandQueue().overrideRepetitionQueue();
             m_editor->commandQueue().execute<TabCommand>(1);
             break;
+        case CTRL_W:
+        {
+            const std::pair<int, int> cursorPos = m_editor->buffer().getCursorPos();
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD);
+            m_editor->buffer().moveCursor(cursorPos.first, cursorPos.second + 1);
+            break;
+        }
         default:
             m_editor->commandQueue().overrideRepetitionQueue();
             m_editor->commandQueue().execute<InsertCharacterCommand>(1, input);
@@ -380,6 +390,30 @@ void InputController::handleDeleteCommands(int input)
         case d:
             m_editor->commandQueue().execute<RemoveLineCommand>(rep);
             break;
+        case w:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD | JUMP_BY_WORD);
+            break;
+        case W:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD);
+            break;
+        case s:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_BY_WORD);
+            break;
+        case S:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, 0);
+            break;
+        case e:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            break;
+        case E:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD | JUMP_TO_END);
+            break;
+        case q:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_BY_WORD | JUMP_TO_END);
+            break;
+        case Q:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_TO_END);
+            break;
         default:
             // TODO: Send signal that command isn't valid
             break;
@@ -392,7 +426,18 @@ void InputController::handleFindCommand(int input)
 {
     size_t rep = std::min(repetitionCount(), static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()));
 
-    m_editor->commandQueue().execute<FindCharacterCommand>(rep, static_cast<char>(input));
+    if (m_commandBuffer == "f")
+    {
+        m_editor->commandQueue().execute<FindCharacterCommand>(rep, static_cast<char>(input), true);
+
+        m_searchedForward = true;
+    }
+    else
+    {
+        m_editor->commandQueue().execute<FindCharacterCommand>(rep, static_cast<char>(input), false);
+
+        m_searchedForward = false;
+    }
 
     m_findCharacter = static_cast<char>(input);
 
