@@ -37,6 +37,7 @@ public:
     // GETTERS
     CommandQueue& commandQueue() { return m_commandQueue ; }
     Buffer& buffer() { return m_buffer ; }
+    View& view() { return m_view; }
     MODE mode() const { return m_currentMode ; }
 
 };

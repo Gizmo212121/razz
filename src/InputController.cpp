@@ -27,6 +27,15 @@ void InputController::handleInput()
 {
     int input = getch();
 
+    // Global input
+    switch (input)
+    {
+        case KEY_RESIZE:
+            m_editor->view().display();
+            return;
+    }
+
+
     MODE currentMode = m_editor->mode();
 
     if (currentMode == NORMAL_MODE)
@@ -47,6 +56,7 @@ void InputController::handleInput()
     }
     else
     {
+        exit_curses(-1);
         std::cerr << "Unexpected mode: " << m_editor->mode() << std::endl;
         exit(1);
     }
@@ -125,6 +135,10 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<CursorFullRightCommand>(1);
             m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
             break;
+        case J:
+            m_editor->commandQueue().execute<CursorFullLeftCommand>(1);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
         case r:
             m_editor->commandQueue().execute<SetModeCommand>(1, REPLACE_CHAR_MODE, 0);
             break;
@@ -148,10 +162,28 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<FindCharacterCommand>(repetitionCount(), m_findCharacter);
             break;
         case w:
-            m_editor->commandQueue().execute<JumpWordCommand>(repetitionCount());
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, true, false);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpSymbolCommand>(repetitionCount());
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, false, false);
+            break;
+        case b:
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, true, false);
+            break;
+        case B:
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, false, false);
+            break;
+        case e:
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, true, true);
+            break;
+        case E:
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), true, false, true);
+            break;
+        case n:
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, true, true);
+            break;
+        case N:
+            m_editor->commandQueue().execute<JumpWordOrSymbolCommand>(repetitionCount(), false, false, true);
             break;
         default:
         {

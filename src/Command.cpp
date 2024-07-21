@@ -507,24 +507,62 @@ bool FindCharacterCommand::execute()
     return false;
 }
 
-void JumpWordCommand::redo() {}
-void JumpWordCommand::undo() {}
-bool JumpWordCommand::execute()
+void JumpWordOrSymbolCommand::redo() {}
+void JumpWordOrSymbolCommand::undo() {}
+bool JumpWordOrSymbolCommand::execute()
 {
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
 
-    m_buffer->moveCursor(cursorPos.first, m_buffer->beginningNextWordIndex());
-
-    return false;
-}
-
-void JumpSymbolCommand::redo() {}
-void JumpSymbolCommand::undo() {}
-bool JumpSymbolCommand::execute()
-{
-    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
-
-    m_buffer->moveCursor(cursorPos.first, m_buffer->beginningNextSymbolIndex());
+    if (!m_jumpToEnd)
+    {
+        if (m_forward)
+        {
+            if (m_jumpByWord)
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningNextWordIndex());
+            }
+            else
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningNextSymbolIndex());
+            }
+        }
+        else
+        {
+            if (m_jumpByWord)
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningPreviousWordIndex());
+            }
+            else
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->beginningPreviousSymbolIndex());
+            }
+        }
+    }
+    else
+    {
+        if (m_forward)
+        {
+            if (m_jumpByWord)
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->endNextWordIndex());
+            }
+            else
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->endNextSymbolIndex());
+            }
+        }
+        else
+        {
+            if (m_jumpByWord)
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->endPreviousWordIndex());
+            }
+            else
+            {
+                m_buffer->moveCursor(cursorPos.first, m_buffer->endPreviousSymbolIndex());
+            }
+        }
+    }
 
     return false;
 }

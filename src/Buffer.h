@@ -48,8 +48,18 @@ public:
     int findCharacterIndex(char character);
 
     bool isCharacterSymbolic(char character);
+
     int beginningNextWordIndex();
     int beginningNextSymbolIndex();
+
+    int endNextWordIndex();
+    int endNextSymbolIndex();
+
+    int endPreviousWordIndex();
+    int endPreviousSymbolIndex();
+
+    int beginningPreviousWordIndex();
+    int beginningPreviousSymbolIndex();
 
 
     void insertCharacter(char character);

@@ -289,24 +289,17 @@ public:
         : Command(editor, buffer, view, commandQueue), m_character(character) {}
 };
 
-class JumpWordCommand : public Command
+class JumpWordOrSymbolCommand : public Command
 {
 private:
-    void redo() override;
-    void undo() override;
-    bool execute() override;
-public:
-    JumpWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
-        : Command(editor, buffer, view, commandQueue) {}
-};
+    bool m_forward;
+    bool m_jumpByWord;
+    bool m_jumpToEnd;
 
-class JumpSymbolCommand : public Command
-{
-private:
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    JumpSymbolCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue)
-        : Command(editor, buffer, view, commandQueue) {}
+    JumpWordOrSymbolCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool forward, bool jumpByWord, bool jumpToEnd)
+        : Command(editor, buffer, view, commandQueue), m_forward(forward), m_jumpByWord(jumpByWord), m_jumpToEnd(jumpToEnd) {}
 };
