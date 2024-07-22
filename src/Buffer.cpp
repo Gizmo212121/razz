@@ -3,7 +3,12 @@
 #include "View.h"
 
 #include <algorithm>
+#include <chrono>
 #include <fstream>
+
+#include <ncurses.h>
+
+#include <chrono>
 
 Buffer::Buffer(const std::string& fileName, View* view)
     : m_view(view), m_fileName(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
@@ -163,7 +168,8 @@ int Buffer::getXPositionOfFirstCharacter(int y)
 {
     y = std::max(0, y);
 
-    for (int i = 0; i < static_cast<int>(m_file[y]->lineSize()); i++)
+    int lineSize = static_cast<int>(m_file[y]->lineSize());
+    for (int i = 0; i < lineSize; i++)
     {
         if (m_file[y]->at(i) != ' ')
         {
@@ -171,7 +177,7 @@ int Buffer::getXPositionOfFirstCharacter(int y)
         }
     }
 
-    return 0;
+    return lineSize;
 }
 
 void Buffer::shiftCursorFullRight()
