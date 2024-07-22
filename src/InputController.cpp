@@ -84,6 +84,11 @@ void InputController::handleNormalModeInput(int input)
         handleFindCommand(input);
         return;
     }
+    else if (m_commandBuffer == "c")
+    {
+        handleDeleteToInsertCommands(input);
+        return;
+    }
 
     switch (input)
     {
@@ -188,6 +193,9 @@ void InputController::handleNormalModeInput(int input)
         case Q:
             m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_TO_END);
             break;
+        case c:
+            m_commandBuffer.push_back('c');
+            break;
         default:
         {
             if (input >= '0' && input <= '9')
@@ -202,9 +210,9 @@ void InputController::handleNormalModeInput(int input)
             }
             else
             {
-                clear();
-                move(0, 0);
-                printw("You printed: %c with integer code: %d", input, input);
+                // clear();
+                // move(0, 0);
+                // printw("You printed: %c with integer code: %d", input, input);
             }
 
             break;
@@ -264,7 +272,7 @@ void InputController::handleInsertModeInput(int input)
             m_editor->commandQueue().execute<RemoveCharacterInsertCommand>(1);
             break;
         case ENTER:
-            m_editor->commandQueue().overrideOverrideRepetitionBuffer();
+            // m_editor->commandQueue().overrideOverrideRepetitionBuffer();
             m_editor->commandQueue().overrideRepetitionQueue();
             m_editor->commandQueue().execute<InsertLineInsertCommand>(1);
             break;
@@ -274,8 +282,8 @@ void InputController::handleInsertModeInput(int input)
             break;
         case CTRL_W:
         {
-            const std::pair<int, int> cursorPos = m_editor->buffer().getCursorPos();
             m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD);
+            const std::pair<int, int> cursorPos = m_editor->buffer().getCursorPos();
             m_editor->buffer().moveCursor(cursorPos.first, cursorPos.second + 1);
             break;
         }
@@ -440,6 +448,52 @@ void InputController::handleFindCommand(int input)
     }
 
     m_findCharacter = static_cast<char>(input);
+
+    m_commandBuffer.clear();
+}
+
+void InputController::handleDeleteToInsertCommands(int input)
+{
+    clearRepetitionBuffer();
+
+    switch (input)
+    {
+        case w:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD | JUMP_BY_WORD);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case W:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case s:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case S:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case e:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case E:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD | JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case q:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        case Q:
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            break;
+        default:
+            // TODO: Send signal that command isn't valid
+            break;
+    }
 
     m_commandBuffer.clear();
 }

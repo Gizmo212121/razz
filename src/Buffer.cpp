@@ -724,4 +724,3 @@ int Buffer::beginningPreviousSymbolIndex()
 
     return m_cursorX;
 }
-

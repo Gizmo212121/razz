@@ -3,10 +3,6 @@
 #include <memory>
 
 // TODO: In future, construct with save file to fill command queue
-/* CommandQueue::CommandQueue()
-{
-
-} */
 
 void CommandQueue::undo()
 {

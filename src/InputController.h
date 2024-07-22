@@ -37,6 +37,7 @@ enum KEYS
     X = 88,
     a = 97,
     b = 98,
+    c = 99,
     d = 100,
     e = 101,
     f = 102,
@@ -88,6 +89,7 @@ private:
     void handleCommandBufferInput();
     void handleDeleteCommands(int input);
     void handleFindCommand(int input);
+    void handleDeleteToInsertCommands(int input);
 
     void clearRepetitionBuffer() { m_repetitionBuffer.clear(); }
     int repetitionCount();

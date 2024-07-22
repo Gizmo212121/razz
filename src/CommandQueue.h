@@ -34,7 +34,9 @@ private:
 public:
 
     CommandQueue(Editor* editor, Buffer* buffer, View* view)
-        : m_editor(editor), m_buffer(buffer), m_view(view), m_commandQueue(this) {}
+        : m_editor(editor), m_buffer(buffer), m_view(view), m_commandQueue(this)
+    {
+    }
 
     void printRepetitionQueue() const;
 

@@ -312,7 +312,6 @@ private:
     std::vector<char> m_characters;
     int m_jumpCode;
 
-    
     int m_differenceX;
 
     void redo() override;

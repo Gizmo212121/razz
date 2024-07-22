@@ -231,7 +231,7 @@ void RemoveCharacterInsertCommand::undo()
     }
     else
     {
-        m_buffer->moveCursor(m_y, m_x);
+        m_buffer->moveCursor(m_y, m_x - m_deletedWhitespaces);
 
         for (int i = 0; i < m_deletedWhitespaces; i++)
         {
@@ -600,6 +600,7 @@ void JumpCursorDeleteWordCommand::undo()
     }
 
     m_buffer->moveCursor(m_y, m_x);
+    m_buffer->shiftCursorX(0);
 
     m_view->displayCurrentLine(m_y);
 }
