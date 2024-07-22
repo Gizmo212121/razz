@@ -16,7 +16,7 @@ class CommandQueue
 
 private:
 
-    const size_t m_maxCommandHistory = 1000;
+    const size_t m_maxCommandHistory = 50000;
     size_t m_currentCommandCount = 0;
     size_t m_undoesSinceChange = 0;
     std::deque<std::unique_ptr<Command>> m_commands;
@@ -59,7 +59,7 @@ public:
         for (int repeat = 0; repeat < repetition; repeat++)
         {
             std::unique_ptr<Command> command = std::make_unique<CommandType>(
-                    m_editor, m_buffer, m_view, m_commandQueue,
+                    m_editor, m_buffer, m_view, m_commandQueue, (repeat == repetition - 1), (repeat == 0),
                     std::forward<CommandArgs>(commandArgs)...);
 
             modifiesBuffer = command->execute();
