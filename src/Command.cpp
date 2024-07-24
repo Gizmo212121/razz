@@ -227,15 +227,24 @@ void RemoveCharacterInsertCommand::undo()
 
         m_buffer->moveCursor(m_y, 0);
 
-        if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y - 1); }
+        // if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y - 1); }
+        if (m_renderUndo) { m_view->display(); }
     }
     else
     {
-        m_buffer->moveCursor(m_y, m_x - m_deletedWhitespaces);
-
         for (int i = 0; i < m_deletedWhitespaces; i++)
         {
+            m_buffer->moveCursor(m_y, m_x - m_deletedWhitespaces);
             m_buffer->insertCharacter(' ');
+        }
+
+        if (m_deletedWhitespaces > 0)
+        {
+            m_buffer->moveCursor(m_y, m_x);
+        }
+        else
+        {
+            m_buffer->moveCursor(m_y, m_x - 1);
         }
 
         if (!m_deletedWhitespaces) { m_buffer->insertCharacter(m_character); m_buffer->shiftCursorX(0); }
@@ -279,10 +288,10 @@ bool RemoveCharacterInsertCommand::execute()
         {
             m_deletedWhitespaces++;
 
+            const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
+
             for (int i = 1; i < WHITESPACE_PER_TAB; i++)
             {
-                const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
-
                 int index = std::max(0, m_x - i - 1);
                 if (lineGapBuffer->at(index) == ' ')
                 {
@@ -336,7 +345,8 @@ void InsertLineNormalCommand::redo()
         m_buffer->insertCharacter(' ');
     }
 
-    if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    // if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    if (m_renderExecute) { m_view->display(); }
 }
 void InsertLineNormalCommand::undo()
 {
@@ -344,7 +354,8 @@ void InsertLineNormalCommand::undo()
     m_buffer->removeLine();
     m_buffer->moveCursor(m_y, m_x);
 
-    if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y); }
+    // if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y); }
+    if (m_renderUndo) { m_view->display(); }
 }
 bool InsertLineNormalCommand::execute()
 {
@@ -359,7 +370,8 @@ bool InsertLineNormalCommand::execute()
         m_buffer->insertCharacter(' ');
     }
 
-    if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    // if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    if (m_renderExecute) { m_view->display(); }
 
     return true;
 }
@@ -387,7 +399,7 @@ void InsertLineInsertCommand::redo()
 
     m_buffer->shiftCursorFullLeft();
 
-    if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    if (m_renderExecute) { m_view->display(); }
 }
 void InsertLineInsertCommand::undo()
 {
@@ -403,6 +415,7 @@ void InsertLineInsertCommand::undo()
     }
 
     m_buffer->moveCursor(m_y, m_x);
+    m_buffer->shiftCursorX(0);
 
     if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y); }
 }
@@ -438,9 +451,9 @@ bool InsertLineInsertCommand::execute()
         m_buffer->insertCharacter(m_characters[i]);
     }
 
-    m_buffer->shiftCursorFullLeft();
+    m_buffer->moveCursor(m_y + 1, m_xPositionOfFirstCharacter);
 
-    if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    if (m_renderExecute) { m_view->display(); }
 
     return true;
 }
@@ -473,8 +486,9 @@ bool RemoveLineCommand::execute()
     if (m_buffer->getFileGapBuffer().numberOfLines() == 1 && m_buffer->getLineGapBuffer(m_y)->lineSize() == 0) { m_view->display(); return false; }
 
     m_line = m_buffer->removeLine();
+    m_buffer->shiftCursorX(0);
 
-    if (m_renderExecute) { m_view->display(); }
+    if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
 
     return true;
 }
@@ -644,6 +658,97 @@ bool JumpCursorDeleteWordCommand::execute()
             std::cerr << "Unexpected cursor jump code: " << m_jumpCode << '\n';
             exit(1);
     }
+
+    m_differenceX = targetX - m_x;
+
+    if (m_differenceX == 0) { return false; }
+
+    m_characters.reserve(abs(m_differenceX));
+
+    if (m_differenceX >= 0)
+    {
+        for (int i = 0; i < m_differenceX; i++)
+        {
+            m_characters[i] = m_buffer->removeCharacter(false);
+        }
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, targetX);
+
+        for (int i = 0; i < - m_differenceX; i++)
+        {
+            m_characters[i] = m_buffer->removeCharacter(false);
+        }
+    }
+
+    if (m_renderExecute) { m_view->displayCurrentLine(m_y); }
+
+    return true;
+}
+
+void JumpCursorDeletePreviousWordInsertModeCommand::redo()
+{
+    m_buffer->moveCursor(m_y, m_x);
+
+    if (m_differenceX >= 0)
+    {
+        for (int i = 0; i < m_differenceX; i++)
+        {
+            m_buffer->removeCharacter(false);
+        }
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, m_x + m_differenceX);
+
+        for (int i = 0; i < - m_differenceX; i++)
+        {
+            m_buffer->removeCharacter(false);
+        }
+    }
+
+    if (m_renderExecute) { m_view->displayCurrentLine(m_y); }
+}
+void JumpCursorDeletePreviousWordInsertModeCommand::undo()
+{
+    m_buffer->moveCursor(m_y, m_x);
+
+    if (m_differenceX >= 0)
+    {
+        for (int i = 0; i < m_differenceX; i++)
+        {
+            m_buffer->insertCharacter(m_characters[i]);
+        }
+    }
+    else
+    {
+        m_buffer->moveCursor(m_y, m_x + m_differenceX);
+
+        for (int i = 0; i < - m_differenceX; i++)
+        {
+            m_buffer->insertCharacter(m_characters[i]);
+        }
+    }
+
+    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->shiftCursorX(0);
+
+    if (m_renderUndo) { m_view->displayCurrentLine(m_y); }
+}
+bool JumpCursorDeletePreviousWordInsertModeCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_x = cursorPos.second;
+    m_y = cursorPos.first;
+
+    if (m_x == 0) { return false; }
+
+    int targetX = m_buffer->beginningPreviousWordIndex();
+
+    if (targetX == m_x) { targetX = m_buffer->beginningPreviousSymbolIndex(); }
+
+    if (targetX == m_x) { targetX = 0; } 
 
     m_differenceX = targetX - m_x;
 

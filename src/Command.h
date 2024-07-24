@@ -28,10 +28,10 @@ protected:
     View* m_view;
     CommandQueue* m_commandQueue;
 
+public:
+
     bool m_renderExecute;
     bool m_renderUndo;
-
-public:
 
     Command(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
         : m_editor(editor), m_buffer(buffer), m_view(view), m_commandQueue(commandQueue), m_renderExecute(renderExecute), m_renderUndo(renderUndo) {}
@@ -322,4 +322,22 @@ private:
 public:
     JumpCursorDeleteWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int code)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_jumpCode(code) {}
+};
+
+class JumpCursorDeletePreviousWordInsertModeCommand : public Command
+{
+private:
+    int m_x = 0;
+    int m_y = 0;
+
+    std::vector<char> m_characters;
+
+    int m_differenceX;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    JumpCursorDeletePreviousWordInsertModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
 };

@@ -1,4 +1,5 @@
 #include "LineGapBuffer.h"
+#include <ncurses.h>
 
 LineGapBuffer::LineGapBuffer(int initialSize)
     : m_buffer(std::vector<char>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)
@@ -74,7 +75,6 @@ void LineGapBuffer::grow()
 
 void LineGapBuffer::printFullLineGapBuffer() const
 {
-    // std::cout << "Buffer size: " << m_buffer.size() << '\n';
     for (size_t index = 0; index < m_buffer.size(); index++)
     {
         if (index < m_preGapIndex || index >= m_postGapIndex)
@@ -83,19 +83,32 @@ void LineGapBuffer::printFullLineGapBuffer() const
         }
         else
         {
-            // std::cout << m_buffer[index] << ", ";
             std::cout << "_, ";
         }
     }
-    // std::cout << "Last element: " << m_buffer[m_bufferSize] << '\n';
-    // std::cout << "After last element: " << m_buffer[m_buffer.size()];
 
     std::cout << std::endl;
 }
 
 char LineGapBuffer::operator[](size_t index) const
 {
-    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
+    try
+    {
+        if (!(index < m_bufferSize - m_postGapIndex + m_preGapIndex))
+        {
+            throw (index);
+        }
+    }
+    catch (size_t)
+    {
+        endwin();
+        std::cerr << "Index out of bounds: " << index << '\n';
+        std::cout << "File Gap Buffer Info:\n\t" << "Buffer Size: " << m_bufferSize << "\n\t";
+        std::cout << "Num characters: " << lineSize() << "\n\t";
+        std::cout << "Pre index: " << preGapIndex() << "\n\t";
+        std::cout << "Post index: " << postGapIndex() << "\n";
+        exit(1);
+    }
 
     if (index < m_preGapIndex)
     {
@@ -109,7 +122,23 @@ char LineGapBuffer::operator[](size_t index) const
 
 char LineGapBuffer::at(size_t index) const
 {
-    assert(index < m_bufferSize - m_postGapIndex + m_preGapIndex);
+    try
+    {
+        if (!(index < m_bufferSize - m_postGapIndex + m_preGapIndex))
+        {
+            throw (index);
+        }
+    }
+    catch (size_t)
+    {
+        endwin();
+        std::cerr << "Index out of bounds: " << index << '\n';
+        std::cout << "File Gap Buffer Info:\n\t" << "Buffer Size: " << m_bufferSize << "\n\t";
+        std::cout << "Num characters: " << lineSize() << "\n\t";
+        std::cout << "Pre index: " << preGapIndex() << "\n\t";
+        std::cout << "Post index: " << postGapIndex() << "\n";
+        // exit(1);
+    }
 
     if (index < m_preGapIndex)
     {

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 class Buffer;
 class View;
@@ -24,12 +25,13 @@ private:
     size_t m_repetitionCounter = 0;
     std::deque<size_t> m_commandRepetitions;
 
+    size_t m_consecutiveBatchCommands = 0;
+
     // POINTERS TO OBJECTS
     Editor* m_editor;
     Buffer* m_buffer;
     View* m_view;
     CommandQueue* m_commandQueue;
-
 
 public:
 
@@ -40,15 +42,11 @@ public:
 
     void printRepetitionQueue() const;
 
-
-    void overrideRepetitionQueue() { m_commandRepetitions[m_currentCommandCount] = --m_repetitionCounter; };
-    void overrideOverrideRepetitionBuffer() { m_repetitionCounter++; }
-
     void undo();
     void redo();
 
     template <typename CommandType, typename ... CommandArgs>
-    void execute(const int repetition, CommandArgs&&... commandArgs)
+    void execute(bool batch, int repetition, CommandArgs&&... commandArgs)
     {
         assert(repetition >= 0);
 
@@ -58,9 +56,39 @@ public:
 
         for (int repeat = 0; repeat < repetition; repeat++)
         {
-            std::unique_ptr<Command> command = std::make_unique<CommandType>(
-                    m_editor, m_buffer, m_view, m_commandQueue, (repeat == repetition - 1), (repeat == 0),
-                    std::forward<CommandArgs>(commandArgs)...);
+            std::unique_ptr<Command> command;
+
+            if (batch)
+            {
+                repetition = 1;
+
+                if (m_consecutiveBatchCommands == 0)
+                {
+                    command = std::make_unique<CommandType>(
+                            m_editor, m_buffer, m_view, m_commandQueue, true, true,
+                            std::forward<CommandArgs>(commandArgs)...);
+                }
+                else
+                {
+                    command = std::make_unique<CommandType>(
+                            m_editor, m_buffer, m_view, m_commandQueue, true, false,
+                            std::forward<CommandArgs>(commandArgs)...);
+
+                    m_commands[m_currentCommandCount - 1]->m_renderExecute = false;
+                }
+
+                m_commandRepetitions[m_currentCommandCount] = --m_repetitionCounter;
+
+                m_consecutiveBatchCommands++;
+            }
+            else
+            {
+                m_consecutiveBatchCommands = 0;
+
+                command = std::make_unique<CommandType>(
+                        m_editor, m_buffer, m_view, m_commandQueue, (repeat == repetition - 1), (repeat == 0),
+                        std::forward<CommandArgs>(commandArgs)...);
+            }
 
             modifiesBuffer = command->execute();
 
@@ -91,6 +119,13 @@ public:
                 }
 
                 m_undoesSinceChange = 0;
+            }
+            else
+            {
+                if (m_consecutiveBatchCommands > 0)
+                {
+                    m_commands[m_currentCommandCount - 1]->m_renderExecute = true;
+                }
             }
 
             // std::cout << "Current command count: " << m_currentCommandCount << '\n';

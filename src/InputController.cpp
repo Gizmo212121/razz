@@ -70,7 +70,7 @@ void InputController::handleNormalModeInput(int input)
     if (input == COLON)
     {
         clearRepetitionBuffer();
-        m_editor->commandQueue().execute<SetModeCommand>(1, COMMAND_MODE, 0);
+        m_editor->commandQueue().execute<SetModeCommand>(false, 1, COMMAND_MODE, 0);
         return;
     }
 
@@ -92,70 +92,69 @@ void InputController::handleNormalModeInput(int input)
 
     switch (input)
     {
+        case CTRL_C:
+            clearRepetitionBuffer();
+            break;
         case j:
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case a:
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 1);
             break;
         case h:
-            m_editor->commandQueue().execute<MoveCursorXCommand>(1, -1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, -1 * repetitionCount());
             break;
         case i:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(1, 1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, 1 * repetitionCount());
             break;
         case p:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(1, -1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, -1 * repetitionCount());
             break;
         case APOSTROPHE:
-            m_editor->commandQueue().execute<MoveCursorXCommand>(1, 1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, 1 * repetitionCount());
             break;
         case H:
-            m_editor->commandQueue().execute<CursorFullLeftCommand>(1);
+            m_editor->commandQueue().execute<CursorFullLeftCommand>(false, 1);
             break;
         case QUOTE:
-            m_editor->commandQueue().execute<CursorFullRightCommand>(1);
+            m_editor->commandQueue().execute<CursorFullRightCommand>(false, 1);
             break;
         case I:
-            m_editor->commandQueue().execute<CursorFullBottomCommand>(1);
+            m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
             break;
         case P:
-            m_editor->commandQueue().execute<CursorFullTopCommand>(1);
+            m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
             break;
         case u:
-            m_editor->commandQueue().execute<UndoCommand>(1);
+            m_editor->commandQueue().execute<UndoCommand>(false, 1);
             break;
         case CTRL_R:
-            m_editor->commandQueue().execute<RedoCommand>(1);
+            m_editor->commandQueue().execute<RedoCommand>(false, 1);
             break;
         case x:
-            if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(repetitionCount(), false);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(true, repetitionCount(), false);
             break;
         case X:
-            if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
-            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(repetitionCount(), true);
+            m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(true, repetitionCount(), true);
             break;
         case A:
-            m_editor->commandQueue().execute<CursorFullRightCommand>(1);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 1);
+            m_editor->commandQueue().execute<CursorFullRightCommand>(false, 1);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 1);
             break;
         case J:
-            m_editor->commandQueue().execute<CursorFullLeftCommand>(1);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<CursorFullLeftCommand>(false, 1);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case r:
-            m_editor->commandQueue().execute<SetModeCommand>(1, REPLACE_CHAR_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, REPLACE_CHAR_MODE, 0);
             break;
         case o:
-            m_editor->commandQueue().execute<InsertLineNormalCommand>(1, true);
-            m_editor->commandQueue().overrideRepetitionQueue();
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<InsertLineNormalCommand>(true, 1, true);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case O:
-            m_editor->commandQueue().execute<InsertLineNormalCommand>(1, false);
-            m_editor->commandQueue().overrideRepetitionQueue();
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<InsertLineNormalCommand>(true, 1, false);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case d:
             m_commandBuffer.push_back('d');
@@ -167,31 +166,31 @@ void InputController::handleNormalModeInput(int input)
             m_commandBuffer.push_back('F');
             break;
         case SEMICOLON:
-            m_editor->commandQueue().execute<FindCharacterCommand>(repetitionCount(), m_findCharacter, m_searchedForward);
+            m_editor->commandQueue().execute<FindCharacterCommand>(false, repetitionCount(), m_findCharacter, m_searchedForward);
             break;
         case w:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD);
             break;
         case s:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_BY_WORD);
             break;
         case S:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), 0);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), 0);
             break;
         case e:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
             break;
         case E:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_FORWARD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_TO_END);
             break;
         case q:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_BY_WORD | JUMP_TO_END);
             break;
         case Q:
-            m_editor->commandQueue().execute<JumpCursorCommand>(repetitionCount(), JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_TO_END);
             break;
         case c:
             m_commandBuffer.push_back('c');
@@ -224,17 +223,17 @@ void InputController::handleCommandModeInput(int input)
 {
     if (input == CTRL_C)
     {
-        m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+        m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
     }
 
     switch (input)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             m_commandBuffer.clear();
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             m_commandBuffer.clear();
             break;
         case ENTER:
@@ -243,7 +242,7 @@ void InputController::handleCommandModeInput(int input)
         case BACKSPACE:
             if (m_commandBuffer == "")
             {
-                m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+                m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             }
             else
             {
@@ -262,34 +261,30 @@ void InputController::handleInsertModeInput(int input)
     switch (input)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, -1);
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, -1);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, -1);
             break;
         case BACKSPACE:
-            if (repeatedInput(input)) { m_editor->commandQueue().overrideRepetitionQueue(); }
-            m_editor->commandQueue().execute<RemoveCharacterInsertCommand>(1);
+            m_editor->commandQueue().execute<RemoveCharacterInsertCommand>(repeatedInput(input), 1);
             break;
         case ENTER:
-            // m_editor->commandQueue().overrideOverrideRepetitionBuffer();
-            m_editor->commandQueue().overrideRepetitionQueue();
-            m_editor->commandQueue().execute<InsertLineInsertCommand>(1);
+            m_editor->commandQueue().execute<InsertLineInsertCommand>(repeatedInput(input), 1);
             break;
         case TAB:
-            m_editor->commandQueue().overrideRepetitionQueue();
-            m_editor->commandQueue().execute<TabCommand>(1);
+            m_editor->commandQueue().execute<TabCommand>(true, 1);
             break;
         case CTRL_W:
         {
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorDeletePreviousWordInsertModeCommand>(true, 1);
+
             const std::pair<int, int> cursorPos = m_editor->buffer().getCursorPos();
             m_editor->buffer().moveCursor(cursorPos.first, cursorPos.second + 1);
             break;
         }
         default:
-            m_editor->commandQueue().overrideRepetitionQueue();
-            m_editor->commandQueue().execute<InsertCharacterCommand>(1, input);
+            m_editor->commandQueue().execute<InsertCharacterCommand>(true, 1, input);
             break;
 
     }
@@ -300,37 +295,37 @@ void InputController::handleReplaceCharMode(int input)
     switch (input)
     {
         case CTRL_C:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             break;
         case ESCAPE:
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             break;
         default:
-            int repetition = repetitionCount();
+        {
+            const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
+            int lineSize = static_cast<int>(m_editor->buffer().getLineGapBuffer(cursorPos.first)->lineSize());
+            int repetition = std::min(repetitionCount(), lineSize - cursorPos.second);
 
             if (repetition == 1)
             {
-                m_editor->commandQueue().execute<ReplaceCharacterCommand>(1, input);
+                m_editor->commandQueue().execute<ReplaceCharacterCommand>(false, 1, input);
             }
             else
             {
                 for (int i = 0; i < repetition; i++)
                 {
-                    m_editor->commandQueue().execute<ReplaceCharacterCommand>(1, input);
-                    m_editor->commandQueue().overrideRepetitionQueue();
+                    m_editor->commandQueue().execute<ReplaceCharacterCommand>(true, 1, input);
 
-                    m_editor->commandQueue().execute<MoveCursorXCommand>(1, 1);
-                    m_editor->commandQueue().overrideRepetitionQueue();
+                    if (cursorPos.second == lineSize - 1) { break; }
 
-                    const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
-
-                    if (static_cast<size_t>(cursorPos.second) == m_editor->buffer().getLineGapBuffer(cursorPos.first)->lineSize()) { break; }
+                    m_editor->buffer().shiftCursorX(1);
                 }
             }
 
-            m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
 
             break;
+        }
     }
 }
 
@@ -384,7 +379,7 @@ void InputController::handleCommandBufferInput()
 
     m_commandBuffer.clear();
 
-    m_editor->commandQueue().execute<SetModeCommand>(1, NORMAL_MODE, 0);
+    m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
 
     return;
 }
@@ -396,31 +391,31 @@ void InputController::handleDeleteCommands(int input)
     switch (input)
     {
         case d:
-            m_editor->commandQueue().execute<RemoveLineCommand>(rep);
+            m_editor->commandQueue().execute<RemoveLineCommand>(false, rep);
             break;
         case w:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD | JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_BY_WORD);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD);
             break;
         case s:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_BY_WORD);
             break;
         case S:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, 0);
             break;
         case e:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
             break;
         case E:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_FORWARD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_TO_END);
             break;
         case q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_BY_WORD | JUMP_TO_END);
             break;
         case Q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(rep, JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_TO_END);
             break;
         default:
             // TODO: Send signal that command isn't valid
@@ -436,13 +431,13 @@ void InputController::handleFindCommand(int input)
 
     if (m_commandBuffer == "f")
     {
-        m_editor->commandQueue().execute<FindCharacterCommand>(rep, static_cast<char>(input), true);
+        m_editor->commandQueue().execute<FindCharacterCommand>(false, rep, static_cast<char>(input), true);
 
         m_searchedForward = true;
     }
     else
     {
-        m_editor->commandQueue().execute<FindCharacterCommand>(rep, static_cast<char>(input), false);
+        m_editor->commandQueue().execute<FindCharacterCommand>(false, rep, static_cast<char>(input), false);
 
         m_searchedForward = false;
     }
@@ -459,36 +454,36 @@ void InputController::handleDeleteToInsertCommands(int input)
     switch (input)
     {
         case w:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD | JUMP_BY_WORD);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case s:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_BY_WORD);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case S:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, 0);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, 0);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case e:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case E:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_FORWARD | JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_BY_WORD | JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case Q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(1, JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_TO_END);
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         default:
             // TODO: Send signal that command isn't valid

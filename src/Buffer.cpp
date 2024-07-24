@@ -177,7 +177,7 @@ int Buffer::getXPositionOfFirstCharacter(int y)
         }
     }
 
-    return lineSize;
+    return m_cursorX;
 }
 
 void Buffer::shiftCursorFullRight()

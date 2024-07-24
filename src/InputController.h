@@ -61,7 +61,7 @@ const int JUMP_FORWARD = 0b001;
 const int JUMP_BY_WORD = 0b010;
 const int JUMP_TO_END = 0b100;
 
-const int MAX_REPETITION_COUNT = 30000;
+const int MAX_REPETITION_COUNT = 50000;
 
 #include "Command.h"
 

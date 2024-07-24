@@ -1,4 +1,5 @@
 #include "FileGapBuffer.h"
+#include <ncurses.h>
 
 #include <utility>
 
@@ -82,6 +83,7 @@ const std::shared_ptr<LineGapBuffer>& FileGapBuffer::operator [](size_t index) c
     }
     catch (size_t)
     {
+        endwin();
         std::cerr << "Index out of bounds: " << index << '\n';
         std::cout << "File Gap Buffer Info:\n\t" << "File Size: " << m_bufferSize << "\n\t";
         std::cout << "Num lines: " << numberOfLines() << "\n\t";

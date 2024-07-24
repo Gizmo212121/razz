@@ -20,23 +20,38 @@ void View::display()
 {
     if (m_buffer->getFileGapBuffer().bufferSize())
     {
-        clear();
-
         move(0, 0);
 
         const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
 
-        for (size_t row = 0; row < m_buffer->getFileGapBuffer().numberOfLines(); row++)
+        int numLines = static_cast<int>(m_buffer->getFileGapBuffer().numberOfLines());
+
+        int maxRender = std::min(LINES, numLines);
+        for (int row = 0; row < maxRender; row++)
+        // for (int row = 0; row < numLines; row++)
         {
-            if (m_buffer->getLineGapBuffer(row))
+            move(row, 0);
+
+            clrtoeol();
+
+            const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(row);
+
+            if (!lineGapBuffer) { break; }
+
+            size_t lineSize = lineGapBuffer->lineSize();
+
+            for (size_t column = 0; column < lineSize; column++)
             {
-                for (size_t column = 0; column < m_buffer->getLineGapBuffer(row)->lineSize(); column++)
-                {
-                    move(row, column);
-                    addch(m_buffer->getLineGapBuffer(row)->at(column));
-                }
+                move(row, column);
+                addch(lineGapBuffer->at(column));
             }
         }
+
+        // for (int i = maxRender; i < LINES; i++)
+        // {
+        //     move(maxRender, 0);
+        //     clrtoeol();
+        // }
 
         move(cursorPos.first, cursorPos.second);
 
@@ -124,7 +139,8 @@ void View::displayFromCurrentLineOnwards(int y)
 
         move(y, 0);
 
-        for (size_t row = y; row < numLines; row++)
+        int maxRender = std::min(LINES, static_cast<int>(numLines));
+        for (int row = y; row < maxRender; row++)
         {
             clrtoeol();
 
@@ -136,8 +152,11 @@ void View::displayFromCurrentLineOnwards(int y)
             move(row + 1, 0);
         }
 
-        move(numLines, 0);
-        clrtoeol();
+        for (int i = maxRender; i < LINES; i++)
+        {
+            move(i, 0);
+            clrtoeol();
+        }
 
         move(cursorPos.first, cursorPos.second);
 
