@@ -27,6 +27,8 @@ bool SetModeCommand::execute()
         m_view->normalCursor();
     }
 
+    m_view->display();
+
     return false;
 }
 
@@ -35,6 +37,7 @@ void MoveCursorXCommand::undo() {}
 bool MoveCursorXCommand::execute()
 {
     m_buffer->shiftCursorX(deltaX);
+    m_view->display();
     return false;
 }
 
@@ -69,6 +72,7 @@ bool MoveCursorYCommand::execute()
     }
 
     m_buffer->shiftCursorY(deltaY);
+    m_view->display();
     return false;
 }
 
@@ -93,6 +97,7 @@ void CursorFullRightCommand::undo() { }
 bool CursorFullRightCommand::execute()
 {
     m_buffer->shiftCursorFullRight();
+    m_view->display();
     return false;
 }
 
@@ -101,6 +106,7 @@ void CursorFullLeftCommand::undo() { }
 bool CursorFullLeftCommand::execute()
 {
     m_buffer->shiftCursorFullLeft();
+    m_view->display();
     return false;
 }
 
@@ -109,6 +115,7 @@ void CursorFullTopCommand::undo() { }
 bool CursorFullTopCommand::execute()
 {
     m_buffer->shiftCursorFullTop();
+    m_view->display();
     return false;
 }
 
@@ -117,6 +124,7 @@ void CursorFullBottomCommand::undo() { }
 bool CursorFullBottomCommand::execute()
 {
     m_buffer->shiftCursorFullBottom();
+    m_view->display();
     return false;
 }
 
@@ -699,6 +707,8 @@ bool JumpCursorCommand::execute()
             std::cerr << "Unexpected cursor jump code: " << m_jumpCode << '\n';
             exit(1);
     }
+
+    m_view->display();
 
     return false;
 }

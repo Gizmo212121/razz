@@ -3,12 +3,7 @@
 #include "View.h"
 
 #include <algorithm>
-#include <chrono>
 #include <fstream>
-
-#include <ncurses.h>
-
-#include <chrono>
 
 Buffer::Buffer(const std::string& fileName, View* view)
     : m_view(view), m_fileName(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
@@ -96,7 +91,6 @@ void Buffer::moveCursor(int y, int x)
 
 void Buffer::shiftCursorX(int x)
 {
-
     int moveX = std::clamp(m_cursorX + x, 0, std::max(0, static_cast<int>(m_file[m_cursorY]->lineSize()) - 1));
 
     if (moveX == m_cursorX) { return; }

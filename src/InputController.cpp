@@ -369,8 +369,27 @@ void InputController::handleCommandBufferInput()
 
             break;
         }
+        else if (currentSubstring == "0")
+        {
+            m_editor->buffer().shiftCursorY( - m_editor->buffer().getCursorPos().first);
+
+            m_editor->view().display();
+
+            break;
+        }
         else
         {
+            int lineNumber = atoi(currentSubstring.c_str());
+
+            if (lineNumber)
+            {
+                m_editor->buffer().shiftCursorY(lineNumber - m_editor->buffer().getCursorPos().first);
+
+                m_editor->view().display();
+
+                break;
+            }
+
             printw("Not an editor command: %s", m_commandBuffer.c_str());
             m_commandBuffer.clear();
             break;

@@ -9,6 +9,13 @@ private:
 
     Buffer* m_buffer;
 
+    int m_linesDown = 0;
+
+
+    void adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold);
+    void printCharacter(int y, int x, char character);
+    void clearRemainingLines(int maxRender);
+
 public:
 
     View(Buffer* buffer);
@@ -16,10 +23,8 @@ public:
     void moveCursor(int y, int x);
 
     void display();
-    void displayWithDoubleBuffer();
 
     void displayBackend();
-
     void displayCurrentLineGapBuffer(int y);
     void displayCurrentFileGapBuffer();
 
