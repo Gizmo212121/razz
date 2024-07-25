@@ -16,12 +16,12 @@ public:
     void moveCursor(int y, int x);
 
     void display();
+    void displayWithDoubleBuffer();
+
     void displayBackend();
 
-    void displayCurrentLine(int y);
     void displayCurrentLineGapBuffer(int y);
     void displayCurrentFileGapBuffer();
-    void displayFromCurrentLineOnwards(int y);
 
     void normalCursor();
     void insertCursor();

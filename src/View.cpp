@@ -16,10 +16,14 @@ void View::moveCursor(int y, int x)
     move(y, x);
 }
 
-void View::display()
+void View::displayWithDoubleBuffer()
 {
     if (m_buffer->getFileGapBuffer().bufferSize())
     {
+        WINDOW* virtualWindow = newwin(LINES, COLS, 0, 0);
+
+        curs_set(0);
+
         move(0, 0);
 
         const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
@@ -28,14 +32,12 @@ void View::display()
 
         int extraLinesFromWrapping = 0;
 
-        clear();
-
         int maxRender = std::min(LINES, numLines);
         for (int row = 0; row < maxRender; row++)
         {
-            move(row + extraLinesFromWrapping, 0);
+            wmove(virtualWindow, row + extraLinesFromWrapping, 0);
 
-            clrtoeol();
+            wclrtoeol(virtualWindow);
 
             const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(row);
 
@@ -47,35 +49,102 @@ void View::display()
 
             for (size_t column = 0; column < lineSize; column++)
             {
-                if (column > static_cast<size_t>(COLS))
-                {
-                    // maxRender--;
-                    extraLinesFromWrapping++;
-                }
-                else
-                {
-
-                }
-
-                move(row + extraLinesFromWrapping, column);
+                wmove(virtualWindow, row + extraLinesFromWrapping, column);
 
                 char character = lineGapBuffer->at(column);
 
                 if (indexOfFirstNonSpace == 0 && character != ' ') { indexOfFirstNonSpace = column; }
 
-                addch(character);
+                waddch(virtualWindow, character);
             }
+
+            int newLines = lineSize / COLS;
+            extraLinesFromWrapping += lineSize / COLS;
+            maxRender -= newLines;
+
         }
 
         for (int i = maxRender; i < LINES; i++)
         {
-            move(maxRender, 0);
+            wmove(virtualWindow, maxRender, 0);
+            clrtoeol();
+        }
+
+        overwrite(virtualWindow, stdscr);
+
+        wmove(stdscr, cursorPos.first, cursorPos.second);
+
+        curs_set(1);
+
+        wrefresh(stdscr);
+
+        delwin(virtualWindow);
+    }
+}
+
+void View::display()
+{
+    if (m_buffer->getFileGapBuffer().bufferSize())
+    {
+        move(0, 0);
+
+        curs_set(0);
+
+        const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+
+        int numLines = static_cast<int>(m_buffer->getFileGapBuffer().numberOfLines());
+
+        int extraLinesFromWrapping = 0;
+
+        int maxRender = std::min(LINES, numLines);
+        for (int row = 0; row < maxRender; row++)
+        {
+            move(row + extraLinesFromWrapping, 0);
+
+            const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(row);
+
+            if (!lineGapBuffer) { break; }
+
+            size_t lineSize = lineGapBuffer->lineSize();
+
+            int indexOfFirstNonSpace = 0;
+
+            for (size_t column = 0; column < lineSize; column++)
+            {
+                move(row + extraLinesFromWrapping, column);
+
+                char character = lineGapBuffer->at(column);
+
+                if (mvinch(row + extraLinesFromWrapping, column) != static_cast<size_t>(character))
+                {
+                    addch(character);
+                }
+
+                // if (indexOfFirstNonSpace == 0 && character != ' ') { indexOfFirstNonSpace = column; }
+            }
+
+            move(row + extraLinesFromWrapping, lineSize);
+
+            int newLines = lineSize / COLS;
+
+            if (!newLines) { clrtoeol(); }
+
+            extraLinesFromWrapping += lineSize / COLS;
+            maxRender -= newLines;
+
+        }
+
+        for (int i = maxRender; i < LINES; i++)
+        {
+            move(i, 0);
             clrtoeol();
         }
 
         move(cursorPos.first, cursorPos.second);
 
         refresh();
+
+        curs_set(1);
     }
 }
 
@@ -125,61 +194,6 @@ void View::displayBackend()
             }
 
             move(row + 1, 0);
-        }
-
-        move(cursorPos.first, cursorPos.second);
-
-        refresh();
-    }
-}
-
-void View::displayCurrentLine(int y)
-{
-    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
-    move(y, 0);
-    clrtoeol();
-
-    size_t lineSize = m_buffer->getLineGapBuffer(y)->lineSize();
-
-    if (lineSize > static_cast<size_t>(COLS)) { display(); return; }
-
-    for (size_t column = 0; column < lineSize; column++)
-    {
-        addch(m_buffer->getLineGapBuffer(y)->at(column));
-    }
-
-    move(cursorPos.first, cursorPos.second);
-
-    refresh();
-}
-
-void View::displayFromCurrentLineOnwards(int y)
-{
-    if (m_buffer->getFileGapBuffer().bufferSize())
-    {
-        const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
-
-        size_t numLines = m_buffer->getFileGapBuffer().numberOfLines();
-
-        move(y, 0);
-
-        int maxRender = std::min(LINES, static_cast<int>(numLines));
-        for (int row = y; row < maxRender; row++)
-        {
-            clrtoeol();
-
-            for (size_t column = 0; column < m_buffer->getLineGapBuffer(row)->lineSize(); column++)
-            {
-                addch(m_buffer->getLineGapBuffer(row)->at(column));
-            }
-
-            move(row + 1, 0);
-        }
-
-        for (int i = maxRender; i < LINES; i++)
-        {
-            move(i, 0);
-            clrtoeol();
         }
 
         move(cursorPos.first, cursorPos.second);
