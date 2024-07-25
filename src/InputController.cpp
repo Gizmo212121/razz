@@ -150,11 +150,10 @@ void InputController::handleNormalModeInput(int input)
             break;
         case o:
             m_editor->commandQueue().execute<InsertLineNormalCommand>(true, 1, true);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            // m_editor->commandQueue().execute<InsertLineNormalCommand>(false, 1, true);
             break;
         case O:
             m_editor->commandQueue().execute<InsertLineNormalCommand>(true, 1, false);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
             break;
         case d:
             m_commandBuffer.push_back('d');
@@ -270,7 +269,8 @@ void InputController::handleInsertModeInput(int input)
             m_editor->commandQueue().execute<RemoveCharacterInsertCommand>(repeatedInput(input), 1);
             break;
         case ENTER:
-            m_editor->commandQueue().execute<InsertLineInsertCommand>(repeatedInput(input), 1);
+            // m_editor->commandQueue().execute<InsertLineInsertCommand>(repeatedInput(input), 1);
+            m_editor->commandQueue().execute<InsertLineInsertCommand>(true, 1);
             break;
         case TAB:
             m_editor->commandQueue().execute<TabCommand>(true, 1);

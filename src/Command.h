@@ -222,6 +222,8 @@ private:
 
     bool m_down;
 
+    int m_deletedSpaces = 0;
+
     void redo() override;
     void undo() override;
     bool execute() override;
@@ -235,6 +237,8 @@ class InsertLineInsertCommand : public Command
 private:
     int m_x = 0;
     int m_y = 0;
+
+    int m_deletedSpaces = 0;
 
     std::vector<char> m_characters;
     size_t m_distanceToEndLine;

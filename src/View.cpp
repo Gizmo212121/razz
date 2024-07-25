@@ -26,11 +26,14 @@ void View::display()
 
         int numLines = static_cast<int>(m_buffer->getFileGapBuffer().numberOfLines());
 
+        int extraLinesFromWrapping = 0;
+
+        clear();
+
         int maxRender = std::min(LINES, numLines);
         for (int row = 0; row < maxRender; row++)
-        // for (int row = 0; row < numLines; row++)
         {
-            move(row, 0);
+            move(row + extraLinesFromWrapping, 0);
 
             clrtoeol();
 
@@ -40,18 +43,35 @@ void View::display()
 
             size_t lineSize = lineGapBuffer->lineSize();
 
+            int indexOfFirstNonSpace = 0;
+
             for (size_t column = 0; column < lineSize; column++)
             {
-                move(row, column);
-                addch(lineGapBuffer->at(column));
+                if (column > static_cast<size_t>(COLS))
+                {
+                    // maxRender--;
+                    extraLinesFromWrapping++;
+                }
+                else
+                {
+
+                }
+
+                move(row + extraLinesFromWrapping, column);
+
+                char character = lineGapBuffer->at(column);
+
+                if (indexOfFirstNonSpace == 0 && character != ' ') { indexOfFirstNonSpace = column; }
+
+                addch(character);
             }
         }
 
-        // for (int i = maxRender; i < LINES; i++)
-        // {
-        //     move(maxRender, 0);
-        //     clrtoeol();
-        // }
+        for (int i = maxRender; i < LINES; i++)
+        {
+            move(maxRender, 0);
+            clrtoeol();
+        }
 
         move(cursorPos.first, cursorPos.second);
 
@@ -119,7 +139,11 @@ void View::displayCurrentLine(int y)
     move(y, 0);
     clrtoeol();
 
-    for (size_t column = 0; column < m_buffer->getLineGapBuffer(y)->lineSize(); column++)
+    size_t lineSize = m_buffer->getLineGapBuffer(y)->lineSize();
+
+    if (lineSize > static_cast<size_t>(COLS)) { display(); return; }
+
+    for (size_t column = 0; column < lineSize; column++)
     {
         addch(m_buffer->getLineGapBuffer(y)->at(column));
     }

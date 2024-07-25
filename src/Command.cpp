@@ -42,6 +42,32 @@ void MoveCursorYCommand::redo() {}
 void MoveCursorYCommand::undo() {}
 bool MoveCursorYCommand::execute()
 {
+    const std::pair<int, int> cursorPos = m_buffer->getCursorPos();
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(cursorPos.first);
+    int lineSize = static_cast<int>(lineGapBuffer->lineSize());
+
+    if (lineSize)
+    {
+        bool lineIsAllSpaces = true;
+        for (int i = lineSize - 1; i >= 0; i--)
+        {
+            if (lineGapBuffer->at(i) != ' ')
+            {
+                lineIsAllSpaces = false;
+                break;
+            }
+        }
+
+        if (lineIsAllSpaces)
+        {
+            m_buffer->moveCursor(cursorPos.first, 0);
+            for (int i = 0; i < lineSize; i++)
+            {
+                m_buffer->removeCharacter(false);
+            }
+        }
+    }
+
     m_buffer->shiftCursorY(deltaY);
     return false;
 }
@@ -101,6 +127,7 @@ void InsertCharacterCommand::redo()
     m_buffer->shiftCursorX(-1);
 
     if (m_renderExecute) { m_view->displayCurrentLine(m_y); }
+    // if (m_renderExecute) { m_view->display(); }
 }
 void InsertCharacterCommand::undo()
 {
@@ -109,6 +136,7 @@ void InsertCharacterCommand::undo()
     m_buffer->shiftCursorX(-1);
 
     if (m_renderUndo) { m_view->displayCurrentLine(m_y); }
+    // if (m_renderUndo) { m_view->display(); }
 }
 bool InsertCharacterCommand::execute()
 {
@@ -337,24 +365,47 @@ bool ReplaceCharacterCommand::execute()
 
 void InsertLineNormalCommand::redo()
 {
-    m_buffer->moveCursor(m_y, m_x);
-    m_buffer->insertLine(true);
+    m_buffer->moveCursor(m_y, 0);
 
-    for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y); i++)
+    for (int i = 0; i < m_deletedSpaces; i++)
     {
-        m_buffer->insertCharacter(' ');
+        m_buffer->removeCharacter(false);
     }
 
-    // if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
+    m_buffer->moveCursor(m_y, m_x);
+
+    m_buffer->insertLine(m_down);
+
+    if (m_down)
+    {
+        for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y); i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+    }
+    else
+    {
+        for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y + 1); i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+    }
+
     if (m_renderExecute) { m_view->display(); }
 }
 void InsertLineNormalCommand::undo()
 {
+    m_buffer->moveCursor(m_y, 0);
+    for (int i = 0; i < m_deletedSpaces; i++)
+    {
+        m_buffer->insertCharacter(' ');
+    }
+
     m_buffer->moveCursor(m_y + 1 * m_down, m_x);
     m_buffer->removeLine();
+
     m_buffer->moveCursor(m_y, m_x);
 
-    // if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y); }
     if (m_renderUndo) { m_view->display(); }
 }
 bool InsertLineNormalCommand::execute()
@@ -363,12 +414,51 @@ bool InsertLineNormalCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
+    int lineSize = static_cast<int>(lineGapBuffer->lineSize());
+
+    if (lineSize)
+    {
+        bool lineIsAllSpaces = true;
+        for (int i = lineSize - 1; i >= 0; i--)
+        {
+            if (lineGapBuffer->at(i) != ' ')
+            {
+                lineIsAllSpaces = false;
+                break;
+            }
+        }
+
+        if (lineIsAllSpaces)
+        {
+            m_buffer->moveCursor(m_y, 0);
+            for (int i = 0; i < lineSize; i++)
+            {
+                m_deletedSpaces++;
+                m_buffer->removeCharacter(false);
+            }
+        }
+    }
+
     m_buffer->insertLine(m_down);
 
-    for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y); i++)
+    if (m_down)
     {
-        m_buffer->insertCharacter(' ');
+        for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y); i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
     }
+    else
+    {
+        for (int i = 0; i < m_buffer->getXPositionOfFirstCharacter(m_y + 1); i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+    }
+
+    m_editor->setMode(INSERT_MODE);
+    m_view->insertCursor();
 
     // if (m_renderExecute) { m_view->displayFromCurrentLineOnwards(m_y); }
     if (m_renderExecute) { m_view->display(); }
@@ -378,6 +468,12 @@ bool InsertLineNormalCommand::execute()
 
 void InsertLineInsertCommand::redo()
 {
+    m_buffer->moveCursor(m_y, 0);
+    for (int i = 0; i < m_deletedSpaces; i++)
+    {
+        m_buffer->removeCharacter(false);
+    }
+
     m_buffer->moveCursor(m_y, m_x);
 
     for (size_t i = 0; i < m_distanceToEndLine; i++)
@@ -395,9 +491,17 @@ void InsertLineInsertCommand::redo()
     for (size_t i = 0; i < m_distanceToEndLine; i++)
     {
         m_buffer->insertCharacter(m_characters[i]);
+
     }
 
-    m_buffer->shiftCursorFullLeft();
+    if (m_deletedSpaces)
+    {
+        m_buffer->moveCursor(m_y + 1, m_x - 1);
+    }
+    else
+    {
+        m_buffer->shiftCursorFullLeft();
+    }
 
     if (m_renderExecute) { m_view->display(); }
 }
@@ -409,6 +513,11 @@ void InsertLineInsertCommand::undo()
 
     m_buffer->moveCursor(m_y, m_x);
 
+    for (int i = 0; i < m_deletedSpaces; i++)
+    {
+        m_buffer->insertCharacter(' ');
+    }
+
     for (size_t i = 0; i < m_characters.size(); i++)
     {
         m_buffer->insertCharacter(m_characters[i]);
@@ -417,11 +526,12 @@ void InsertLineInsertCommand::undo()
     m_buffer->moveCursor(m_y, m_x);
     m_buffer->shiftCursorX(0);
 
-    if (m_renderUndo) { m_view->displayFromCurrentLineOnwards(m_y); }
+    if (m_renderUndo) { m_view->display(); }
 }
 bool InsertLineInsertCommand::execute()
 {
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
@@ -430,6 +540,32 @@ bool InsertLineInsertCommand::execute()
     m_distanceToEndLine = m_buffer->getLineGapBuffer(m_y)->lineSize() - m_x;
 
     m_buffer->moveCursor(m_y, m_x);
+
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
+    int lineSize = static_cast<int>(lineGapBuffer->lineSize());
+
+    if (lineSize)
+    {
+        bool lineIsAllSpaces = true;
+        for (int i = lineSize - 1; i >= 0; i--)
+        {
+            if (lineGapBuffer->at(i) != ' ')
+            {
+                lineIsAllSpaces = false;
+                break;
+            }
+        }
+
+        if (lineIsAllSpaces)
+        {
+            m_buffer->moveCursor(m_y, 0);
+            for (int i = 0; i < lineSize; i++)
+            {
+                m_deletedSpaces++;
+                m_buffer->removeCharacter(false);
+            }
+        }
+    }
 
     m_characters.resize(m_distanceToEndLine);
 

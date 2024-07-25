@@ -81,6 +81,8 @@ private:
     int m_previousInput = 0;
     MODE m_previousMode = NORMAL_MODE;
 
+    int m_randomInputsLeft = 500;
+
     void handleNormalModeInput(int input);
     void handleCommandModeInput(int input);
     void handleInsertModeInput(int input);
