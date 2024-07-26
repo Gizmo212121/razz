@@ -28,6 +28,7 @@ private:
 
 public:
 
+    Buffer();
     Buffer(const std::string& fileName, View* view);
 
     void moveCursor(int y, int x);

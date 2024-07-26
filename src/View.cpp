@@ -11,16 +11,6 @@ View::View(Buffer* buffer)
     display();
 }
 
-void View::moveCursor(int y, int x)
-{
-    assert(y >= 0);
-
-    // const std::shared_ptr<LineGapBuffer>& line = m_buffer->getLineGapBuffer(y);
-    // int lineSize = static_cast<int>(line->lineSize());
-
-    move(y + x / COLS, x % COLS);
-}
-
 void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold)
 {
     if (relativeCursorPosY <= upperLineMoveThreshold)
@@ -51,7 +41,9 @@ void View::display()
 
     int numLines = static_cast<int>(m_buffer->getFileGapBuffer().numberOfLines());
     int extraLinesFromWrapping = 0;
+    int extraLinesFromWrappingBeforeCursor = 0;
     int maxRender = std::min(LINES, numLines - m_linesDown);
+    int cursorIndexOfFirstNonSpace = 0;
     for (int row = 0; row < maxRender; row++)
     {
         const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(row + m_linesDown);
@@ -97,11 +89,23 @@ void View::display()
         extraLinesFromWrapping += newLinesCreatedByCurrentLine;
         maxRender -= newLinesCreatedByCurrentLine;
 
+        if (row < cursorPos.first - m_linesDown) { extraLinesFromWrappingBeforeCursor += newLinesCreatedByCurrentLine; }
+
+        if (row == cursorPos.first - m_linesDown) { cursorIndexOfFirstNonSpace = indexOfFirstNonSpace; }
     }
 
     clearRemainingLines(maxRender);
 
-    move(cursorPos.first - m_linesDown + extraLinesFromWrapping, cursorPos.second);
+
+    int cursorNewlines = cursorPos.second / COLS;
+    if (cursorNewlines)
+    {
+        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + cursorPos.second / COLS, cursorPos.second % (COLS - 1) + cursorIndexOfFirstNonSpace - 1);
+    }
+    else
+    {
+        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + cursorPos.second / COLS, cursorPos.second % (COLS - 1));
+    }
 
     refresh();
 

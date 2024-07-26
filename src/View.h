@@ -1,5 +1,9 @@
 #pragma once
 
+#include <deque>
+#include <vector>
+#include <stdio.h>
+
 class Buffer;
 
 class View
@@ -11,6 +15,7 @@ private:
 
     int m_linesDown = 0;
 
+    void initializeWrapQueue();
 
     void adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold);
     void printCharacter(int y, int x, char character);
@@ -18,9 +23,8 @@ private:
 
 public:
 
+    View();
     View(Buffer* buffer);
-
-    void moveCursor(int y, int x);
 
     void display();
 

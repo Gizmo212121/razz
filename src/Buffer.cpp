@@ -85,8 +85,6 @@ void Buffer::moveCursor(int y, int x)
 
     m_cursorX = moveX;
     m_lastXSinceYMove = moveX;
-
-    m_view->moveCursor(m_cursorY, m_cursorX);
 }
 
 void Buffer::shiftCursorX(int x)
@@ -106,8 +104,6 @@ void Buffer::shiftCursorX(int x)
     {
         for (int i = 0; i < abs(x); i++) { m_file[m_cursorY]->left(); }
     }
-
-    m_view->moveCursor(m_cursorY, m_cursorX);
 }
 
 void Buffer::shiftCursorY(int y)
@@ -141,8 +137,6 @@ void Buffer::shiftCursorY(int y)
     {
         for (int i = 0; i < abs(relativeMoveX); i++) { m_file[m_cursorY]->left(); }
     }
-
-    m_view->moveCursor(m_cursorY, m_cursorX);
 }
 
 void Buffer::shiftCursorXWithoutGapBuffer(int x)
@@ -153,9 +147,6 @@ void Buffer::shiftCursorXWithoutGapBuffer(int x)
 
     m_cursorX = moveX;
     m_lastXSinceYMove = moveX;
-
-    // moveCursor(m_cursorY, moveX);
-    m_view->moveCursor(m_cursorY, m_cursorX);
 }
 
 int Buffer::getXPositionOfFirstCharacter(int y)
