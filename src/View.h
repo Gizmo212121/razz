@@ -1,5 +1,8 @@
 #pragma once
 
+#include "LineGapBuffer.h"
+
+#include <memory>
 #include <deque>
 #include <vector>
 #include <stdio.h>
@@ -13,13 +16,13 @@ private:
 
     Buffer* m_buffer;
 
+    int m_prevLinesDown = 0;
     int m_linesDown = 0;
-
-    void initializeWrapQueue();
 
     void adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold);
     void printCharacter(int y, int x, char character);
-    void clearRemainingLines(int maxRender);
+    void clearRemainingLines(int maxRender, int extraLinesFromWrapping);
+    int indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const;
 
 public:
 

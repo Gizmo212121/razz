@@ -13,6 +13,8 @@ View::View(Buffer* buffer)
 
 void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold)
 {
+    m_prevLinesDown = m_linesDown;
+
     if (relativeCursorPosY <= upperLineMoveThreshold)
     {
         m_linesDown = std::max(0, m_linesDown + relativeCursorPosY - upperLineMoveThreshold);
@@ -21,6 +23,16 @@ void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveTh
     {
         m_linesDown += relativeCursorPosY - lowerLineMoveThreshold;
     }
+}
+
+int View::indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const
+{
+    for (size_t i = 0; i < line->lineSize(); i++)
+    {
+        if (line->at(i) != ' ') { return static_cast<int>(i); }
+    }
+
+    return 0;
 }
 
 void View::display()
@@ -43,68 +55,79 @@ void View::display()
     int extraLinesFromWrapping = 0;
     int extraLinesFromWrappingBeforeCursor = 0;
     int maxRender = std::min(LINES, numLines - m_linesDown);
+    int maxRenderCopy = std::min(LINES, numLines - m_linesDown);
     int cursorIndexOfFirstNonSpace = 0;
+
+    bool scrolledBuffer = (m_prevLinesDown != m_linesDown);
+
     for (int row = 0; row < maxRender; row++)
     {
+        maxRender = maxRenderCopy - extraLinesFromWrapping;
+
         const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(row + m_linesDown);
 
         if (!lineGapBuffer) { break; }
 
         size_t lineSize = lineGapBuffer->lineSize();
+        int indexOfFirstNonSpace = indexOfFirstNonSpaceCharacter(lineGapBuffer);
 
-        int indexOfFirstNonSpace = 0;
-
-        for (size_t i = 0; i <= lineSize / COLS; i++)
-        {
-            move(row + extraLinesFromWrapping + i, 0);
-            clrtoeol();
-        }
+        if (indexOfFirstNonSpace >= COLS) { continue; }
 
         move(row + extraLinesFromWrapping, 0);
 
+        // Must clear all lines when scrolling
+        if (scrolledBuffer) { clrtoeol(); }
+
         int newLinesCreatedByCurrentLine = 0;
 
-        for (size_t column = 0; column < lineSize; column++)
+        for (int column = 0; column < static_cast<int>(lineSize); column++)
         {
             char character = lineGapBuffer->at(column);
 
-            newLinesCreatedByCurrentLine = column / COLS;
-            if (newLinesCreatedByCurrentLine > 0)
+            if (column >= COLS)
             {
+                newLinesCreatedByCurrentLine = (column - COLS) / (COLS - indexOfFirstNonSpace) + 1;
+
                 int newCursorY = row + extraLinesFromWrapping + newLinesCreatedByCurrentLine;
-                int newCursorX = column % COLS + indexOfFirstNonSpace;
+                int newCursorX = (column - COLS) % (COLS - indexOfFirstNonSpace) + indexOfFirstNonSpace;
+
+                if ((column - COLS) % (COLS - indexOfFirstNonSpace) == 0)
+                {
+                    move(newCursorY, 0);
+                    clrtoeol();
+                }
 
                 printCharacter(newCursorY, newCursorX, character);
             }
             else
             {
-                int newCursorY = row + extraLinesFromWrapping;
-
-                printCharacter(newCursorY, column, character);
+                printCharacter(row + extraLinesFromWrapping, column, character);
             }
-
-            if (indexOfFirstNonSpace == 0 && character != ' ') { indexOfFirstNonSpace = column; }
         }
 
         extraLinesFromWrapping += newLinesCreatedByCurrentLine;
-        maxRender -= newLinesCreatedByCurrentLine;
+
+        if (!newLinesCreatedByCurrentLine)
+        {
+            move(row + extraLinesFromWrapping, lineSize);
+            clrtoeol();
+        }
 
         if (row < cursorPos.first - m_linesDown) { extraLinesFromWrappingBeforeCursor += newLinesCreatedByCurrentLine; }
 
         if (row == cursorPos.first - m_linesDown) { cursorIndexOfFirstNonSpace = indexOfFirstNonSpace; }
+
     }
 
-    clearRemainingLines(maxRender);
+    clearRemainingLines(maxRender, extraLinesFromWrapping);
 
-
-    int cursorNewlines = cursorPos.second / COLS;
-    if (cursorNewlines)
+    if (cursorPos.second >= COLS)
     {
-        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + cursorPos.second / COLS, cursorPos.second % (COLS - 1) + cursorIndexOfFirstNonSpace - 1);
+        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + (cursorPos.second - COLS) / (COLS - cursorIndexOfFirstNonSpace) + 1, (cursorPos.second - COLS) % (COLS - cursorIndexOfFirstNonSpace) + cursorIndexOfFirstNonSpace);
     }
     else
     {
-        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + cursorPos.second / COLS, cursorPos.second % (COLS - 1));
+        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + cursorPos.second / COLS, cursorPos.second % COLS);
     }
 
     refresh();
@@ -122,11 +145,11 @@ void View::printCharacter(int y, int x, char character)
     }
 }
 
-void View::clearRemainingLines(int maxRender)
+void View::clearRemainingLines(int maxRender, int extraLinesFromWrapping)
 {
-    for (int i = maxRender; i < LINES; i++)
+    for (int i = maxRender + extraLinesFromWrapping; i < LINES; i++)
     {
-        move(i, 0);
+        move(i , 0);
         clrtoeol();
     }
 }
