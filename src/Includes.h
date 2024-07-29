@@ -15,6 +15,7 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 enum MODE
 {
@@ -281,7 +282,17 @@ enum CUSTOM_COLORS
 enum COLOR_PAIRS
 {
     BACKGROUND = 1,
-    LINE_NUMBER_ORANGE = 2,
+
+    LINE_NUMBER_ORANGE,
+    LINE_NUMBER_GREY,
+
+    NORMAL_MODE_PAIR,
+    INSERT_MODE_PAIR,
+    COMMAND_MODE_PAIR,
+    REPLACE_CHAR_MODE_PAIR,
+
+    PATH_COLOR_PAIR,
+    ERROR_MESSAGE_PAIR,
 };
 
 enum KEYS

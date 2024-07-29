@@ -11,7 +11,7 @@ private:
 
     View* m_view;
 
-    std::string m_fileName;
+    std::filesystem::path m_filePath;
 
     FileGapBuffer m_file;
 
@@ -21,7 +21,6 @@ private:
 
 private:
 
-    bool doesFileExist(const std::string& fileName) const;
     void readFromFile(const std::string& fileName);
 
 public:
@@ -69,17 +68,17 @@ public:
     void insertLine(std::shared_ptr<LineGapBuffer> line, bool down);
     std::shared_ptr<LineGapBuffer> removeLine();
 
-    void writeToFile(const std::string& fileName);
+    void writeToFile(const std::filesystem::path& filePath);
     void saveCurrentFile();
 
     // SETTERS
-    void setFileName(const std::string& fileName) { m_fileName = fileName; }
+    void setFileName(const std::filesystem::path& filePath) { m_filePath = filePath; }
 
     // GETTERS
     const FileGapBuffer& getFileGapBuffer() const { return m_file ; }
     const std::shared_ptr<LineGapBuffer>& getLineGapBuffer(int y) const { return m_file[y]; }
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
-    const std::string& fileName() { return m_fileName; }
+    const std::filesystem::path& filePath() const { return m_filePath; }
 
 };

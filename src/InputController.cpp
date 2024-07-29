@@ -65,6 +65,7 @@ void InputController::handleNormalModeInput(int input)
     {
         clearRepetitionBuffer();
         m_editor->commandQueue().execute<SetModeCommand>(false, 1, COMMAND_MODE, 0);
+        m_editor->view().displayCommandBuffer();
         return;
     }
 
@@ -214,28 +215,27 @@ void InputController::handleNormalModeInput(int input)
 
 void InputController::handleCommandModeInput(int input)
 {
-    if (input == CTRL_C)
-    {
-        m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
-    }
-
     switch (input)
     {
         case CTRL_C:
             m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             m_commandBuffer.clear();
-            break;
+            m_editor->view().display();
+            return;
         case ESCAPE:
             m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
             m_commandBuffer.clear();
             break;
         case ENTER:
             handleCommandBufferInput();
-            break;
+            m_editor->view().display();
+            return;
         case BACKSPACE:
             if (m_commandBuffer == "")
             {
                 m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
+                m_editor->view().display();
+                return;
             }
             else
             {
@@ -247,6 +247,8 @@ void InputController::handleCommandModeInput(int input)
             m_commandBuffer.push_back(static_cast<char>(input));
             break;
     }
+
+    m_editor->view().displayCommandBuffer();
 }
 
 void InputController::handleInsertModeInput(int input)
@@ -336,17 +338,41 @@ void InputController::handleCommandBufferInput()
             m_editor->quit();
             break;
         }
+        else if (currentSubstring == "q")
+        {
+            // TODO: if (!fileChanged)
+            if (false)
+            {
+                m_editor->quit();
+            }
+            else
+            {
+                displayErrorMessage("No write since last change");
+            }
+        }
         else if (currentSubstring == "w")
         {
-            if (m_editor->buffer().fileName() != "NO_NAME") { m_editor->buffer().saveCurrentFile(); }
-            else { /* TODO: Send signal that no file is set; */ }
+            if (m_editor->buffer().filePath() != "NO_NAME")
+            {
+                m_editor->buffer().saveCurrentFile();
+            }
+            else
+            {
+                displayErrorMessage("No file name. Run :write 'filename'");
+            }
 
             break;
         }
         else if (currentSubstring == "wq")
         {
-            if (m_editor->buffer().fileName() != "NO_NAME") { m_editor->buffer().saveCurrentFile(); }
-            else { /* TODO: Send signal that no file is set; */ }
+            if (m_editor->buffer().filePath() != "NO_NAME")
+            {
+                m_editor->buffer().saveCurrentFile();
+            }
+            else
+            {
+                displayErrorMessage("No file name. Run :write 'filename'");
+            }
 
             m_editor->quit();
 
@@ -357,7 +383,7 @@ void InputController::handleCommandBufferInput()
             std::string fileName;
             istream >> fileName;
 
-            if (m_editor->buffer().fileName() == "NO_NAME") { m_editor->buffer().setFileName(fileName); }
+            if (m_editor->buffer().filePath() == "NO_NAME") { m_editor->buffer().setFileName(fileName); }
 
             m_editor->buffer().writeToFile(fileName);
 
@@ -497,4 +523,13 @@ void InputController::handleDeleteToInsertCommands(int input)
     }
 
     m_commandBuffer.clear();
+}
+
+void InputController::displayErrorMessage(const std::string& message)
+{
+    m_commandBuffer = message;
+
+    m_editor->view().displayCommandBuffer(COLOR_PAIR(ERROR_MESSAGE_PAIR));
+
+    getch();
 }

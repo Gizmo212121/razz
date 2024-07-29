@@ -34,10 +34,14 @@ private:
     int repetitionCount();
 
     bool repeatedInput(int input) { return (input == m_previousInput) ;}
+    void displayErrorMessage(const std::string& message);
 
 public:
 
     InputController(Editor* editor);
 
     void handleInput();
+
+    // Getters
+    const std::string& commandBuffer() const { return m_commandBuffer; }
 };

@@ -36,6 +36,7 @@ public:
     // GETTERS
     CommandQueue& commandQueue() { return m_commandQueue ; }
     Buffer& buffer() { return m_buffer ; }
+    const InputController& inputController() { return m_inputController; }
     View& view() { return m_view; }
     MODE mode() const { return m_currentMode ; }
 

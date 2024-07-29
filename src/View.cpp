@@ -2,9 +2,10 @@
 #include "Buffer.h"
 #include "Command.h"
 #include "Includes.h"
+#include "Editor.h"
 
-View::View(Buffer* buffer)
-    : m_buffer(buffer)
+View::View(Editor* editor, Buffer* buffer)
+    : m_editor(editor), m_buffer(buffer)
 {
     display();
 }
@@ -103,8 +104,9 @@ void View::display()
 
     int extraLinesFromWrapping = 0;
     int extraLinesFromWrappingBeforeCursor = 0;
-    int maxRender = std::min(LINES, numLines - m_linesDown);
-    int maxRenderCopy = std::min(LINES, numLines - m_linesDown);
+    int maxRender = std::clamp(numLines - m_linesDown, 0, LINES - 2);
+
+    int maxRenderCopy = maxRender;
     int cursorIndexOfFirstNonSpace = 0;
     bool scrolledBuffer = (m_prevLinesDown != m_linesDown);
 
@@ -136,10 +138,101 @@ void View::display()
     }
 
     clearRemainingLines(maxRender, extraLinesFromWrapping);
+
+    printBufferInformationLine(cursorPos);
+
     moveCursor(cursorPos, cursorIndexOfFirstNonSpace, extraLinesFromWrappingBeforeCursor);
 
     refresh();
     curs_set(1);
+}
+
+void View::printBufferInformationLine(const std::pair<int, int>& cursorPos)
+{
+    MODE currentMode = m_editor->mode();
+    move(LINES - 2, 0);
+
+    int xPos = 0;
+    std::string modeString;
+    int colorPair = 0;
+
+    switch (currentMode)
+    {
+        case NORMAL_MODE:
+            modeString = " Normal ";
+            colorPair = NORMAL_MODE_PAIR;
+            xPos += 8;
+            break;
+        case INSERT_MODE:
+            modeString = " Insert ";
+            colorPair = INSERT_MODE_PAIR;
+            xPos += 8;
+            break;
+        case COMMAND_MODE:
+            modeString = " Command ";
+            colorPair = COMMAND_MODE_PAIR;
+            xPos += 9;
+            break;
+        case REPLACE_CHAR_MODE:
+            modeString = " Replace ";
+            colorPair = REPLACE_CHAR_MODE_PAIR;
+            xPos += 9;
+            break;
+    }
+
+    // Draw mode
+    attron(COLOR_PAIR(colorPair));
+    addstr(modeString.c_str());
+    attroff(COLOR_PAIR(colorPair));
+
+
+    // Draw path and extra spaces
+    attron(COLOR_PAIR(PATH_COLOR_PAIR));
+
+    const std::filesystem::path& filePath = m_buffer->filePath();
+    std::string fileName;
+
+    if (filePath == "NO_NAME")
+    {
+        fileName = " NO_NAME ";
+    }
+    else
+    {
+        fileName = " " + std::filesystem::absolute(m_buffer->filePath()).string() + " ";
+    }
+
+    addstr(fileName.c_str());
+
+    int maxCursorIndicatorSize = numberOfDigits(cursorPos.first + 1) + 3 + numberOfDigits(cursorPos.second + 1);
+    for (int i = xPos; i < COLS - static_cast<int>(fileName.size()) - maxCursorIndicatorSize; i++)
+    {
+        addch(' ');
+    }
+
+    attroff(COLOR_PAIR(PATH_COLOR_PAIR));
+
+    // Draw cursor coordinates
+
+    std::string cursorPosition = " " + std::to_string(cursorPos.first + 1) + ":" + std::to_string(cursorPos.second + 1) + " ";
+
+    attron(COLOR_PAIR(colorPair));
+    addstr(cursorPosition.c_str());
+    attroff(COLOR_PAIR(colorPair));
+}
+
+void View::displayCommandBuffer(const int colorPair)
+{
+    move(LINES - 1, 0);
+    clrtoeol();
+
+    const std::string& commandBuffer = m_editor->inputController().commandBuffer();
+
+    attron(colorPair);
+    addch(':');
+    addstr(commandBuffer.c_str());
+    attroff(colorPair);
+
+    refresh();
 }
 
 int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY)
@@ -216,7 +309,9 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
                 }
                 else
                 {
+                    attron(COLOR_PAIR(LINE_NUMBER_GREY));
                     addch(lineNumber[i + numberDigits - m_reservedColumnsForLineNumbering + 1]);
+                    attroff(COLOR_PAIR(LINE_NUMBER_GREY));
                 }
             }
             else

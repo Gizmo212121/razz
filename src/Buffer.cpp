@@ -1,9 +1,10 @@
 #include "Buffer.h"
 #include "LineGapBuffer.h"
 #include "View.h"
+#include <filesystem>
 
 Buffer::Buffer(const std::string& fileName, View* view)
-    : m_view(view), m_fileName(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
+    : m_view(view), m_filePath(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
 {
     if (fileName == "NO_NAME")
     {
@@ -11,7 +12,7 @@ Buffer::Buffer(const std::string& fileName, View* view)
     }
     else
     {
-        if (doesFileExist(fileName))
+        if (std::filesystem::exists(m_filePath))
         {
             readFromFile(fileName);
         }
@@ -20,12 +21,6 @@ Buffer::Buffer(const std::string& fileName, View* view)
             m_file.insertLine(std::make_shared<LineGapBuffer>(LineGapBuffer::initialBufferSize));
         }
     }
-}
-
-bool Buffer::doesFileExist(const std::string& fileName) const
-{
-    std::ifstream infile(fileName);
-    return infile.good();
 }
 
 void Buffer::readFromFile(const std::string& fileName)
@@ -305,11 +300,11 @@ char Buffer::replaceCharacter(char character)
     return replacedChar;
 }
 
-void Buffer::writeToFile(const std::string& fileName)
+void Buffer::writeToFile(const std::filesystem::path& filePath)
 {
     std::ofstream fout;
 
-    fout.open(fileName);
+    fout.open(filePath);
 
     for (size_t row = 0; row < m_file.numberOfLines(); row++)
     {
@@ -328,7 +323,7 @@ void Buffer::writeToFile(const std::string& fileName)
 
 void Buffer::saveCurrentFile()
 {
-    writeToFile(m_fileName);
+    writeToFile(m_filePath);
 }
 
 bool Buffer::isCharacterSymbolic(char character)

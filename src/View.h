@@ -2,6 +2,7 @@
 
 #include "LineGapBuffer.h"
 
+class Editor;
 class Buffer;
 class FileGapBuffer;
 
@@ -10,6 +11,7 @@ class View
 
 private:
 
+    Editor* m_editor;
     Buffer* m_buffer;
 
     int m_reservedColumnsForLineNumbering = 0;
@@ -26,13 +28,15 @@ private:
     int wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLines, int relativeCursorY);
 
     int printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY);
+    void printBufferInformationLine(const std::pair<int, int>& cursorPos);
 
 public:
 
     View();
-    View(Buffer* buffer);
+    View(Editor* editor, Buffer* buffer);
 
     void display();
+    void displayCommandBuffer(const int colorPair = COLOR_PAIR(BACKGROUND));
 
     void displayBackend();
     void displayCurrentLineGapBuffer(int y);
