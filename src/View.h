@@ -3,6 +3,7 @@
 #include "LineGapBuffer.h"
 
 class Buffer;
+class FileGapBuffer;
 
 class View
 {
@@ -22,8 +23,9 @@ private:
     int indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const;
     int numberOfDigits(int x);
     void moveCursor(const std::pair<int, int>& cursorPos, int cursorIndexOfFirstNonSpace, int extraLinesFromWrappingBeforeCursor);
+    int wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLines, int relativeCursorY);
 
-    int printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY, int extraLinesFromWrappingBeforeCursor);
+    int printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY);
 
 public:
 

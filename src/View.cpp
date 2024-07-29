@@ -47,9 +47,46 @@ int View::numberOfDigits(int x)
     return count;
 }
 
+int View::wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLines, int relativeCursorY)
+{
+    int extraLinesFromWrapping = 0;
+    int maxRender = std::min(LINES, numLines - m_linesDown);
+    int maxRenderCopy = maxRender;
+
+    for (int row = 0; row < maxRender; row++)
+    {
+        if (row >= relativeCursorY) { return extraLinesFromWrapping; }
+
+        const std::shared_ptr<LineGapBuffer>& lineGapBuffer = fileGapBuffer[row + m_linesDown];
+        if (!lineGapBuffer)
+            break;
+
+        maxRender = maxRenderCopy - extraLinesFromWrapping;
+
+        int indexOfFirstNonSpace = indexOfFirstNonSpaceCharacter(lineGapBuffer);
+
+        if (indexOfFirstNonSpace >= COLS)
+            continue;
+
+        int lineSize = lineGapBuffer->lineSize();
+
+        if (lineSize + m_reservedColumnsForLineNumbering >= COLS)
+        {
+            extraLinesFromWrapping += (lineSize + m_reservedColumnsForLineNumbering - COLS) / (COLS - indexOfFirstNonSpace - m_reservedColumnsForLineNumbering) + 1;
+        }
+    }
+
+    return extraLinesFromWrapping;
+}
+
 void View::display()
 {
-    if (!m_buffer->getFileGapBuffer().bufferSize()) { return; }
+    const FileGapBuffer& fileGapBuffer = m_buffer->getFileGapBuffer();
+    if (!fileGapBuffer.bufferSize())
+        return;
+
+    int numLines = static_cast<int>(fileGapBuffer.numberOfLines());
+    m_reservedColumnsForLineNumbering = numberOfDigits(numLines) + 1;
 
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     const int relativeCursorPosY = cursorPos.first - m_linesDown;
@@ -57,13 +94,12 @@ void View::display()
     const int upperLineMoveThreshold = LINES / 4;
     const int lowerLineMoveThreshold = upperLineMoveThreshold * 3;
 
-    adjustLinesAfterScrolling(relativeCursorPosY, upperLineMoveThreshold, lowerLineMoveThreshold);
+    int preCursorWrappedLines = wrappedLinesBeforeCursor(fileGapBuffer, numLines, relativeCursorPosY);
+    adjustLinesAfterScrolling(relativeCursorPosY, upperLineMoveThreshold - preCursorWrappedLines, lowerLineMoveThreshold - preCursorWrappedLines);
 
     move(0, 0);
     curs_set(0);
 
-    int numLines = static_cast<int>(m_buffer->getFileGapBuffer().numberOfLines());
-    m_reservedColumnsForLineNumbering = numberOfDigits(numLines) + 1;
 
     int extraLinesFromWrapping = 0;
     int extraLinesFromWrappingBeforeCursor = 0;
@@ -78,8 +114,6 @@ void View::display()
         if (!lineGapBuffer)
             break;
 
-        maxRender = maxRenderCopy - extraLinesFromWrapping;
-
         int indexOfFirstNonSpace = indexOfFirstNonSpaceCharacter(lineGapBuffer);
 
         if (indexOfFirstNonSpace >= COLS)
@@ -91,21 +125,24 @@ void View::display()
         if (scrolledBuffer)
             clrtoeol();
 
-        int newLinesCreatedByCurrentLine = printLine(lineGapBuffer, row, indexOfFirstNonSpace, extraLinesFromWrapping, relativeY, extraLinesFromWrappingBeforeCursor);
+        int newLinesCreatedByCurrentLine = printLine(lineGapBuffer, row, indexOfFirstNonSpace, extraLinesFromWrapping, relativeY);
 
         extraLinesFromWrapping += newLinesCreatedByCurrentLine;
 
         if (row < relativeY) { extraLinesFromWrappingBeforeCursor += newLinesCreatedByCurrentLine; }
         if (row == relativeY) { cursorIndexOfFirstNonSpace = indexOfFirstNonSpace; }
+
+        maxRender = maxRenderCopy - extraLinesFromWrapping;
     }
 
     clearRemainingLines(maxRender, extraLinesFromWrapping);
     moveCursor(cursorPos, cursorIndexOfFirstNonSpace, extraLinesFromWrappingBeforeCursor);
+
     refresh();
     curs_set(1);
 }
 
-int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY, int extraLinesFromWrappingBeforeCursor)
+int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY)
 {
     int lineSize = static_cast<int>(lineGapBuffer->lineSize());
     int newLinesCreatedByCurrentLine = 0;
@@ -149,8 +186,8 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         if (relativeCursorY == row)
         {
             move(relativeCursorY + extraLinesFromWrapping, i);
-            lineNumber = std::to_string(row + m_linesDown);
-            numberDigits = numberOfDigits(row + m_linesDown);
+            lineNumber = std::to_string(row + m_linesDown + 1);
+            numberDigits = numberOfDigits(row + m_linesDown + 1);
         }
         else
         {

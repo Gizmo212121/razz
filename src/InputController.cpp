@@ -363,21 +363,14 @@ void InputController::handleCommandBufferInput()
 
             break;
         }
-        else if (currentSubstring == "0")
-        {
-            m_editor->buffer().shiftCursorY( - m_editor->buffer().getCursorPos().first);
-
-            m_editor->view().display();
-
-            break;
-        }
         else
         {
             int lineNumber = atoi(currentSubstring.c_str());
 
             if (lineNumber)
             {
-                m_editor->buffer().shiftCursorY(lineNumber - m_editor->buffer().getCursorPos().first);
+                // -1 at end for 1-based indexing on line jumps
+                m_editor->buffer().shiftCursorY(lineNumber - m_editor->buffer().getCursorPos().first - 1);
 
                 m_editor->view().display();
 
