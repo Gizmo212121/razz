@@ -2,13 +2,6 @@
 
 #include "Command.h"
 
-#include <deque>
-#include <memory>
-#include <stdio.h>
-#include <iostream>
-#include <cassert>
-#include <algorithm>
-
 class Buffer;
 class View;
 

@@ -1,11 +1,6 @@
 #pragma once
 
-#include <vector>
-#include <stdio.h>
-#include <string>
-#include <cstring>
-#include <iostream>
-#include <cassert>
+#include "Includes.h"
 
 class LineGapBuffer
 {

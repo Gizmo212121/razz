@@ -1,5 +1,4 @@
 #include "LineGapBuffer.h"
-#include <ncurses.h>
 
 LineGapBuffer::LineGapBuffer(int initialSize)
     : m_buffer(std::vector<char>(initialSize)), m_preGapIndex(0), m_postGapIndex(initialSize), m_bufferSize(initialSize)

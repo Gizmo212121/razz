@@ -4,8 +4,6 @@
 
 class View;
 
-const int WHITESPACE_PER_TAB = 4;
-
 class Buffer
 {
 

@@ -1,7 +1,5 @@
 #include "LineGapBuffer.h"
 
-#include <memory>
-
 class FileGapBuffer
 {
 

@@ -5,8 +5,6 @@
 #include "InputController.h"
 #include "View.h"
 
-#include <ncurses.h>
-
 class Editor
 {
 

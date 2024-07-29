@@ -2,9 +2,6 @@
 #include "LineGapBuffer.h"
 #include "View.h"
 
-#include <algorithm>
-#include <fstream>
-
 Buffer::Buffer(const std::string& fileName, View* view)
     : m_view(view), m_fileName(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
 {

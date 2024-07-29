@@ -2,11 +2,6 @@
 
 #include "LineGapBuffer.h"
 
-#include <memory>
-#include <deque>
-#include <vector>
-#include <stdio.h>
-
 class Buffer;
 
 class View
@@ -16,6 +11,8 @@ private:
 
     Buffer* m_buffer;
 
+    int m_reservedColumnsForLineNumbering = 0;
+
     int m_prevLinesDown = 0;
     int m_linesDown = 0;
 
@@ -23,6 +20,10 @@ private:
     void printCharacter(int y, int x, char character);
     void clearRemainingLines(int maxRender, int extraLinesFromWrapping);
     int indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const;
+    int numberOfDigits(int x);
+    void moveCursor(const std::pair<int, int>& cursorPos, int cursorIndexOfFirstNonSpace, int extraLinesFromWrappingBeforeCursor);
+
+    int printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY, int extraLinesFromWrappingBeforeCursor);
 
 public:
 

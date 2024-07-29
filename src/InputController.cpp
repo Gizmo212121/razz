@@ -3,12 +3,6 @@
 #include "Editor.h"
 #include "Command.h"
 
-#include <ncurses.h>
-#include <string>
-#include <sstream>
-#include <algorithm>
-
-
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer("")
 {

@@ -1,22 +1,12 @@
 #pragma once
 
-#include <memory>
-#include <vector>
+#include "Includes.h"
 
 class Editor;
 class Buffer;
 class View;
 class CommandQueue;
 class LineGapBuffer;
-
-enum MODE
-{
-    INSERT_MODE,
-    NORMAL_MODE,
-    COMMAND_MODE,
-    REPLACE_CHAR_MODE,
-};
-
 
 class Command
 {

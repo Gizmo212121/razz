@@ -1,6 +1,4 @@
 #include "CommandQueue.h"
-#include <cassert>
-#include <memory>
 
 // TODO: In future, construct with save file to fill command queue
 

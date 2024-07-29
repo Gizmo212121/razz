@@ -3,7 +3,6 @@
 #include "Editor.h"
 #include "InputController.h"
 #include "LineGapBuffer.h"
-#include <ncurses.h>
 
 void SetModeCommand::redo() {}
 void SetModeCommand::undo() {}
