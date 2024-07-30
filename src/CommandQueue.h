@@ -38,6 +38,8 @@ public:
     void undo();
     void redo();
 
+    size_t currentCommandCount() const { return m_currentCommandCount; }
+
     template <typename CommandType, typename ... CommandArgs>
     void execute(bool batch, int repetition, CommandArgs&&... commandArgs)
     {

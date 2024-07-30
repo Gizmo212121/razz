@@ -2,9 +2,12 @@
 #include "Buffer.h"
 #include "Editor.h"
 #include "Command.h"
+#include "Includes.h"
+#include <cstdlib>
+#include <string>
 
 InputController::InputController(Editor* editor)
-    : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer("")
+    : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
 {
 }
 
@@ -34,6 +37,9 @@ void InputController::handleInput()
 
     if (currentMode == NORMAL_MODE)
     {
+        m_circularInputBuffer.add(input);
+        m_editor->view().displayCircularInputBuffer();
+
         handleNormalModeInput(input);
     }
     else if (currentMode == COMMAND_MODE)
@@ -230,6 +236,29 @@ void InputController::handleCommandModeInput(int input)
             handleCommandBufferInput();
             m_editor->view().display();
             return;
+        case CTRL_W:
+        {
+            if (m_commandBuffer == "") { return; }
+
+            bool foundCharacter = false;
+
+            int numCharacters = static_cast<int>(m_commandBuffer.size()) - 1;
+            for (int i = numCharacters; i >= -1; i--)
+            {
+                char currentCharacter = m_commandBuffer[i];
+
+                if ((foundCharacter && currentCharacter == ' ') || (i == -1))
+                {
+                    m_commandBuffer.erase(i + 1, numCharacters - i);
+                    break;
+                }
+                else if (!foundCharacter && currentCharacter != ' ')
+                {
+                    foundCharacter = true;
+                }
+            }
+            break;
+        }
         case BACKSPACE:
             if (m_commandBuffer == "")
             {
@@ -340,8 +369,7 @@ void InputController::handleCommandBufferInput()
         }
         else if (currentSubstring == "q")
         {
-            // TODO: if (!fileChanged)
-            if (false)
+            if (m_lastSavedCommand == m_editor->commandQueue().currentCommandCount())
             {
                 m_editor->quit();
             }
@@ -355,6 +383,7 @@ void InputController::handleCommandBufferInput()
             if (m_editor->buffer().filePath() != "NO_NAME")
             {
                 m_editor->buffer().saveCurrentFile();
+                m_lastSavedCommand = m_editor->commandQueue().currentCommandCount();
             }
             else
             {
@@ -381,30 +410,51 @@ void InputController::handleCommandBufferInput()
         else if (currentSubstring == "write")
         {
             std::string fileName;
-            istream >> fileName;
+            if (!(istream >> fileName))
+            {
+                displayErrorMessage("Invalid file name");
+                break;
+            }
 
             if (m_editor->buffer().filePath() == "NO_NAME") { m_editor->buffer().setFileName(fileName); }
 
             m_editor->buffer().writeToFile(fileName);
 
+            if (fileName ==  m_editor->buffer().filePath())
+            {
+                m_lastSavedCommand = m_editor->commandQueue().currentCommandCount();
+            }
+
             break;
         }
         else
         {
-            int lineNumber = atoi(currentSubstring.c_str());
+            bool isIntegral = true;
 
-            if (lineNumber)
+            for (size_t i = 0; i < currentSubstring.size(); i++)
             {
-                // -1 at end for 1-based indexing on line jumps
-                m_editor->buffer().shiftCursorY(lineNumber - m_editor->buffer().getCursorPos().first - 1);
-
-                m_editor->view().display();
-
-                break;
+                if (!std::isdigit(currentSubstring[i]))
+                {
+                    isIntegral = false;
+                }
             }
 
-            printw("Not an editor command: %s", m_commandBuffer.c_str());
-            m_commandBuffer.clear();
+            if (isIntegral)
+            {
+                size_t lineNumber = stol(currentSubstring);
+
+                if (lineNumber)
+                {
+                    // -1 at end for 1-based indexing on line jumps
+                    m_editor->buffer().shiftCursorY(lineNumber - m_editor->buffer().getCursorPos().first - 1);
+
+                    m_editor->view().display();
+
+                    break;
+                }
+            }
+
+            displayErrorMessage("Not an editor command: " + m_commandBuffer);
             break;
         }
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Command.h"
+#include "CircularBuffer.h"
 
 class Editor;
 
@@ -19,6 +20,10 @@ private:
 
     int m_previousInput = 0;
     MODE m_previousMode = NORMAL_MODE;
+
+    size_t m_lastSavedCommand = 0;
+
+    CircularBuffer m_circularInputBuffer;
 
     void handleNormalModeInput(int input);
     void handleCommandModeInput(int input);
@@ -44,4 +49,5 @@ public:
 
     // Getters
     const std::string& commandBuffer() const { return m_commandBuffer; }
+    const CircularBuffer& circularBuffer() const { return m_circularInputBuffer; }
 };

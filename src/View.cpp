@@ -140,6 +140,7 @@ void View::display()
     clearRemainingLines(maxRender, extraLinesFromWrapping);
 
     printBufferInformationLine(cursorPos);
+    displayCircularInputBuffer();
 
     moveCursor(cursorPos, cursorIndexOfFirstNonSpace, extraLinesFromWrappingBeforeCursor);
 
@@ -232,13 +233,41 @@ void View::displayCommandBuffer(const int colorPair)
     addstr(commandBuffer.c_str());
     attroff(colorPair);
 
+
     refresh();
+}
+
+void View::displayCircularInputBuffer()
+{
+    curs_set(0);
+
+    attron(COLOR_PAIR(BACKGROUND));
+
+    for (size_t i = 0; i < INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE; i++)
+    {
+        move(LINES - 1, COLS - i - 1);
+        int input = m_editor->inputController().circularBuffer()[i];
+        char character = ' ';
+        if (input != -1) { character = static_cast<char>(input); }
+
+        addch(character);
+    }
+
+    attroff(COLOR_PAIR(BACKGROUND));
+
+    move(m_previousCursorY, m_previousCursorX);
+
+    refresh();
+
+    curs_set(1);
 }
 
 int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY)
 {
     int lineSize = static_cast<int>(lineGapBuffer->lineSize());
     int newLinesCreatedByCurrentLine = 0;
+
+    if (row == relativeCursorY) { attron(COLOR_PAIR(PATH_COLOR_PAIR)); }
 
     for (int column = 0; column < lineSize; column++)
     {
@@ -270,6 +299,22 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         move(row + extraLinesFromWrapping, lineSize + m_reservedColumnsForLineNumbering);
         clrtoeol();
     }
+
+    // Color the rest of the line the cursor is at
+
+    if (row == relativeCursorY)
+    {
+        int newCursorY = row + extraLinesFromWrapping + newLinesCreatedByCurrentLine;
+        int newCursorXWithoutOffset = (lineSize + m_reservedColumnsForLineNumbering - COLS) % (COLS - indexOfFirstNonSpace - m_reservedColumnsForLineNumbering);
+
+        for (int i = newCursorXWithoutOffset; i < COLS; i++)
+        {
+            printCharacter(newCursorY, newCursorXWithoutOffset + m_reservedColumnsForLineNumbering + indexOfFirstNonSpace, ' ');
+        }
+
+        attroff(COLOR_PAIR(PATH_COLOR_PAIR));
+    }
+
     // Draw line numbers
     for (int i = 0; i < m_reservedColumnsForLineNumbering; i++)
     {
@@ -331,11 +376,22 @@ void View::moveCursor(const std::pair<int, int>& cursorPos, int cursorIndexOfFir
         int relativeXAfterWrap = cursorPos.second + m_reservedColumnsForLineNumbering - COLS;
         int lineSizeWithoutIndent = COLS - cursorIndexOfFirstNonSpace - m_reservedColumnsForLineNumbering;
 
-        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + relativeXAfterWrap / lineSizeWithoutIndent + 1, relativeXAfterWrap % lineSizeWithoutIndent + cursorIndexOfFirstNonSpace + m_reservedColumnsForLineNumbering);
+        int cursorY = cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + relativeXAfterWrap / lineSizeWithoutIndent + 1;
+        int cursorX = relativeXAfterWrap % lineSizeWithoutIndent + cursorIndexOfFirstNonSpace + m_reservedColumnsForLineNumbering;
+
+        move(cursorY, cursorX);
+
+        m_previousCursorY = cursorY;
+        m_previousCursorX = cursorX;
     }
     else
     {
-        move(cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + (cursorPos.second + m_reservedColumnsForLineNumbering) / COLS, (cursorPos.second + m_reservedColumnsForLineNumbering) % COLS);
+        int cursorY = cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + (cursorPos.second + m_reservedColumnsForLineNumbering) / COLS;
+        int cursorX = (cursorPos.second + m_reservedColumnsForLineNumbering) % COLS;
+        move(cursorY, cursorX);
+
+        m_previousCursorY = cursorY;
+        m_previousCursorX = cursorX;
     }
 }
 

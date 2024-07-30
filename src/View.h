@@ -19,6 +19,9 @@ private:
     int m_prevLinesDown = 0;
     int m_linesDown = 0;
 
+    int m_previousCursorY = 0;
+    int m_previousCursorX = 0;
+
     void adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold);
     void printCharacter(int y, int x, char character);
     void clearRemainingLines(int maxRender, int extraLinesFromWrapping);
@@ -37,6 +40,7 @@ public:
 
     void display();
     void displayCommandBuffer(const int colorPair = COLOR_PAIR(BACKGROUND));
+    void displayCircularInputBuffer();
 
     void displayBackend();
     void displayCurrentLineGapBuffer(int y);
