@@ -54,6 +54,13 @@ void InputController::handleInput()
     {
         handleReplaceCharMode(input);
     }
+    else if (currentMode == VISUAL_MODE || currentMode == VISUAL_LINE_MODE || currentMode == VISUAL_BLOCK_MODE)
+    {
+        m_circularInputBuffer.add(input);
+        m_editor->view().displayCircularInputBuffer();
+
+        handleVisualModes(input);
+    }
     else
     {
         exit_curses(-1);
@@ -195,6 +202,36 @@ void InputController::handleNormalModeInput(int input)
         case c:
             m_commandBuffer.push_back('c');
             break;
+        case v:
+        {
+            clearRepetitionBuffer();
+
+            const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
+            m_cursorPosOnVisualMode = cursorPos;
+
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_MODE, 0);
+            break;
+        }
+        case V:
+        {
+            clearRepetitionBuffer();
+
+            const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
+            m_cursorPosOnVisualMode = cursorPos;
+
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_LINE_MODE, 0);
+            break;
+        }
+        case CTRL_V:
+        {
+            clearRepetitionBuffer();
+
+            const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
+            m_cursorPosOnVisualMode = cursorPos;
+
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_BLOCK_MODE, 0);
+            break;
+        }
         default:
         {
             if (input >= '0' && input <= '9')
@@ -209,9 +246,9 @@ void InputController::handleNormalModeInput(int input)
             }
             else
             {
-                // clear();
-                // move(0, 0);
-                // printw("You printed: %c with integer code: %d", input, input);
+                clear();
+                move(0, 0);
+                printw("You printed: %c with integer code: %d", input, input);
             }
 
             break;
@@ -294,7 +331,6 @@ void InputController::handleInsertModeInput(int input)
             m_editor->commandQueue().execute<RemoveCharacterInsertCommand>(repeatedInput(input), 1);
             break;
         case ENTER:
-            // m_editor->commandQueue().execute<InsertLineInsertCommand>(repeatedInput(input), 1);
             m_editor->commandQueue().execute<InsertLineInsertCommand>(true, 1);
             break;
         case TAB:
@@ -303,9 +339,6 @@ void InputController::handleInsertModeInput(int input)
         case CTRL_W:
         {
             m_editor->commandQueue().execute<JumpCursorDeletePreviousWordInsertModeCommand>(true, 1);
-
-            const std::pair<int, int> cursorPos = m_editor->buffer().getCursorPos();
-            m_editor->buffer().moveCursor(cursorPos.first, cursorPos.second + 1);
             break;
         }
         default:
@@ -333,18 +366,11 @@ void InputController::handleReplaceCharMode(int input)
 
             if (repetition == 1)
             {
-                m_editor->commandQueue().execute<ReplaceCharacterCommand>(false, 1, input);
+                m_editor->commandQueue().execute<ReplaceCharacterCommand>(false, 1, input, false);
             }
             else
             {
-                for (int i = 0; i < repetition; i++)
-                {
-                    m_editor->commandQueue().execute<ReplaceCharacterCommand>(true, 1, input);
-
-                    if (cursorPos.second == lineSize - 1) { break; }
-
-                    m_editor->buffer().shiftCursorX(1);
-                }
+                m_editor->commandQueue().execute<ReplaceCharacterCommand>(false, repetition, input, true);
             }
 
             m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
@@ -582,4 +608,65 @@ void InputController::displayErrorMessage(const std::string& message)
     m_editor->view().displayCommandBuffer(COLOR_PAIR(ERROR_MESSAGE_PAIR));
 
     getch();
+}
+
+void InputController::handleVisualModes(int input)
+{
+    MODE currentMode = m_editor->mode();
+
+    switch (input)
+    {
+        case CTRL_C:
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
+            break;
+        case ESCAPE:
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, NORMAL_MODE, 0);
+            break;
+        case COLON:
+            m_editor->commandQueue().execute<SetModeCommand>(false, 1, COMMAND_MODE, 0);
+            m_editor->view().displayCommandBuffer();
+            break;
+        case v:
+            if (currentMode != VISUAL_MODE)
+            {
+                m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_MODE, 0);
+            }
+            break;
+        case V:
+            if (currentMode != VISUAL_LINE_MODE)
+            {
+                m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_LINE_MODE, 0);
+            }
+            break;
+        case CTRL_V:
+            if (currentMode != VISUAL_BLOCK_MODE)
+            {
+                m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_BLOCK_MODE, 0);
+            }
+            break;
+        case h:
+            m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, -1 * repetitionCount());
+            break;
+        case i:
+            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, 1 * repetitionCount());
+            break;
+        case p:
+            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, -1 * repetitionCount());
+            break;
+        case APOSTROPHE:
+            m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, 1 * repetitionCount());
+            break;
+        case H:
+            m_editor->commandQueue().execute<CursorFullLeftCommand>(false, 1);
+            break;
+        case QUOTE:
+            m_editor->commandQueue().execute<CursorFullRightCommand>(false, 1);
+            break;
+        case I:
+            m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            break;
+        case P:
+            m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
+            break;
+    }
 }

@@ -23,6 +23,9 @@ enum MODE
     NORMAL_MODE,
     COMMAND_MODE,
     REPLACE_CHAR_MODE,
+    VISUAL_MODE,
+    VISUAL_LINE_MODE,
+    VISUAL_BLOCK_MODE,
 };
 
 const int WHITESPACE_PER_TAB = 4;
@@ -290,8 +293,12 @@ enum COLOR_PAIRS
     INSERT_MODE_PAIR,
     COMMAND_MODE_PAIR,
     REPLACE_CHAR_MODE_PAIR,
+    VISUAL_MODE_PAIR,
+    VISUAL_LINE_MODE_PAIR,
+    VISUAL_BLOCK_MODE_PAIR,
 
     PATH_COLOR_PAIR,
+    VISUAL_HIGHLIGHT_PAIR,
     ERROR_MESSAGE_PAIR,
 };
 
@@ -301,6 +308,7 @@ enum KEYS
     TAB = 9,
     ENTER = 10,
     CTRL_R = 18,
+    CTRL_V = 22,
     CTRL_W = 23,
     ESCAPE = 27,
     SPACE = 32,
@@ -323,6 +331,9 @@ enum KEYS
     Q = 81,
     R = 82,
     S = 83,
+    T = 84,
+    U = 85,
+    V = 86,
     W = 87,
     X = 88,
     a = 97,
@@ -340,7 +351,9 @@ enum KEYS
     q = 113,
     r = 114,
     s = 115,
+    t = 116,
     u = 117,
+    v = 118,
     w = 119,
     x = 120,
     SPACE_DOT = 250,

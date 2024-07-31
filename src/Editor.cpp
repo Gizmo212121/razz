@@ -9,6 +9,7 @@ Editor::Editor(const std::string& fileName)
 Editor::~Editor()
 {
     m_view.normalCursor();
+    clear();
     refresh();
     endwin();
 }
@@ -40,6 +41,8 @@ void Editor::initNcurses()
         init_color(GREY19, 41 * COLOR_CONVERSION, 46 * COLOR_CONVERSION, 66 * COLOR_CONVERSION);
         init_color(GREY30, 59 * COLOR_CONVERSION, 66 * COLOR_CONVERSION, 97 * COLOR_CONVERSION);
         init_color(INDIAN_RED1_1, 255 * COLOR_CONVERSION, 75 * COLOR_CONVERSION, 75 * COLOR_CONVERSION);
+        init_color(MEDIUM_PURPLE1_1, 187 * COLOR_CONVERSION, 154 * COLOR_CONVERSION, 247 * COLOR_CONVERSION);
+        init_color(MEDIUM_PURPLE4, 57 * COLOR_CONVERSION, 74 * COLOR_CONVERSION, 125 * COLOR_CONVERSION);
     }
 
     init_pair(BACKGROUND, COLOR_WHITE, GREY11);
@@ -48,9 +51,13 @@ void Editor::initNcurses()
     init_pair(INSERT_MODE_PAIR, GREY11, DARK_OLIVE_GREEN3_3);
     init_pair(COMMAND_MODE_PAIR, GREY11, LIGHT_GOLDENROD3);
     init_pair(REPLACE_CHAR_MODE_PAIR, GREY11, LIGHT_CORAL);
+    init_pair(VISUAL_MODE_PAIR, GREY11, MEDIUM_PURPLE1_1);
+    init_pair(VISUAL_LINE_MODE_PAIR, GREY11, MEDIUM_PURPLE2_1);
+    init_pair(VISUAL_BLOCK_MODE_PAIR, GREY11, MEDIUM_PURPLE3_1);
 
     init_pair(LINE_NUMBER_ORANGE, SANDY_BROWN, GREY11);
     init_pair(LINE_NUMBER_GREY, GREY30, GREY11);
+    init_pair(VISUAL_HIGHLIGHT_PAIR, COLOR_WHITE, MEDIUM_PURPLE4);
 
     init_pair(PATH_COLOR_PAIR, COLOR_WHITE, GREY19);
     init_pair(ERROR_MESSAGE_PAIR, INDIAN_RED1_1, GREY11);

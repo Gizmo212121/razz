@@ -358,7 +358,14 @@ bool ReplaceCharacterCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
+    int lineSize = static_cast<int>(m_editor->buffer().getLineGapBuffer(cursorPos.first)->lineSize());
+
     m_replacedCharacter = m_buffer->replaceCharacter(m_character);
+
+    if (m_headingRight && cursorPos.second < lineSize - 1)
+    {
+        m_buffer->shiftCursorX(1);
+    }
 
     if (m_character == m_replacedCharacter) { return false; }
 
@@ -666,6 +673,8 @@ bool FindCharacterCommand::execute()
 
     m_buffer->moveCursor(cursorPos.first, m_buffer->findCharacterIndex(m_character, m_searchForward));
 
+    if (m_renderExecute) { m_view->display(); }
+
     return false;
 }
 
@@ -914,6 +923,8 @@ bool JumpCursorDeletePreviousWordInsertModeCommand::execute()
             m_characters[i] = m_buffer->removeCharacter(false);
         }
     }
+
+    m_buffer->moveCursor(m_y, m_x + 1);
 
     if (m_renderExecute) { m_view->display(); }
 

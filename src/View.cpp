@@ -3,6 +3,7 @@
 #include "Command.h"
 #include "Includes.h"
 #include "Editor.h"
+#include <ncurses.h>
 
 View::View(Editor* editor, Buffer* buffer)
     : m_editor(editor), m_buffer(buffer)
@@ -118,7 +119,7 @@ void View::display()
 
         int indexOfFirstNonSpace = indexOfFirstNonSpaceCharacter(lineGapBuffer);
 
-        if (indexOfFirstNonSpace >= COLS)
+        if (indexOfFirstNonSpace >= COLS - 1)
             continue;
 
         int relativeY = cursorPos.first - m_linesDown;
@@ -134,7 +135,10 @@ void View::display()
         if (row < relativeY) { extraLinesFromWrappingBeforeCursor += newLinesCreatedByCurrentLine; }
         if (row == relativeY) { cursorIndexOfFirstNonSpace = indexOfFirstNonSpace; }
 
-        maxRender = maxRenderCopy - extraLinesFromWrapping;
+        if (numLines - m_linesDown >= LINES - 2)
+        {
+            maxRender = maxRenderCopy - extraLinesFromWrapping;
+        }
     }
 
     clearRemainingLines(maxRender, extraLinesFromWrapping);
@@ -177,6 +181,21 @@ void View::printBufferInformationLine(const std::pair<int, int>& cursorPos)
         case REPLACE_CHAR_MODE:
             modeString = " Replace ";
             colorPair = REPLACE_CHAR_MODE_PAIR;
+            xPos += 9;
+            break;
+        case VISUAL_MODE:
+            modeString = " Visual ";
+            colorPair = VISUAL_MODE_PAIR;
+            xPos += 8;
+            break;
+        case VISUAL_LINE_MODE:
+            modeString = " V-Line ";
+            colorPair = VISUAL_LINE_MODE_PAIR;
+            xPos += 8;
+            break;
+        case VISUAL_BLOCK_MODE:
+            modeString = " V-Block ";
+            colorPair = VISUAL_BLOCK_MODE_PAIR;
             xPos += 9;
             break;
     }
@@ -264,17 +283,104 @@ void View::displayCircularInputBuffer()
 
 int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY)
 {
+    MODE currentMode = m_editor->mode();
+    bool inVisualMode = (currentMode == VISUAL_MODE || currentMode == VISUAL_LINE_MODE || currentMode == VISUAL_BLOCK_MODE);
+    const std::pair<int, int>& visualModeInitialCursor = m_editor->inputController().initialVisualModeCursor();
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+
     int lineSize = static_cast<int>(lineGapBuffer->lineSize());
     int newLinesCreatedByCurrentLine = 0;
-
-    if (row == relativeCursorY) { attron(COLOR_PAIR(PATH_COLOR_PAIR)); }
 
     for (int column = 0; column < lineSize; column++)
     {
         char character = lineGapBuffer->at(column);
 
+        // Line colorings in visual modes
+        int colorPair = COLOR_PAIR(BACKGROUND);
+
+        switch (currentMode)
+        {
+            case VISUAL_MODE:
+            {
+                int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
+                int lowerBoundY = std::min(relativeCursorY, relativePreviousVisualY);
+                int upperBoundY = std::max(relativeCursorY, relativePreviousVisualY);
+
+                int lowerBoundX = std::min(cursorPos.second, visualModeInitialCursor.second);
+                int upperBoundX = std::max(cursorPos.second, visualModeInitialCursor.second);
+
+                bool isWithinXBounds = (column >= lowerBoundX && column <= upperBoundX);
+
+                if (row == lowerBoundY)
+                {
+                    if (lowerBoundY == upperBoundY)
+                    {
+                        if (isWithinXBounds) { colorPair = VISUAL_HIGHLIGHT_PAIR; }
+                    }
+                    else if ((lowerBoundY < relativeCursorY && column >= visualModeInitialCursor.second) ||
+                             (lowerBoundY > relativeCursorY && column >= cursorPos.second) ||
+                             (lowerBoundY == relativeCursorY && column >= cursorPos.second))
+                    {
+                        colorPair = VISUAL_HIGHLIGHT_PAIR;
+                    }
+                }
+                else if (row == upperBoundY)
+                {
+                    if ((upperBoundY > relativeCursorY && column <= visualModeInitialCursor.second) ||
+                        (upperBoundY <= relativeCursorY && column <= cursorPos.second))
+                    {
+                        colorPair = VISUAL_HIGHLIGHT_PAIR;
+                    }
+                }
+                else if (row > lowerBoundY && row < upperBoundY)
+                {
+                    colorPair = VISUAL_HIGHLIGHT_PAIR;
+                }
+
+                break;
+            }
+            case VISUAL_LINE_MODE:
+            {
+                int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
+
+                int lowerBound = std::min(relativeCursorY, relativePreviousVisualY);
+                int upperBound = std::max(relativeCursorY, relativePreviousVisualY);
+
+                if (row >= lowerBound && row <= upperBound)
+                {
+                    colorPair = VISUAL_HIGHLIGHT_PAIR;
+                }
+                break;
+            }
+            case VISUAL_BLOCK_MODE:
+            {
+                int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
+                int lowerBoundY = std::min(relativeCursorY, relativePreviousVisualY);
+                int upperBoundY = std::max(relativeCursorY, relativePreviousVisualY);
+
+                int lowerBoundX = std::min(cursorPos.second, visualModeInitialCursor.second);
+                int upperBoundX = std::max(cursorPos.second, visualModeInitialCursor.second);
+
+                if (column >= lowerBoundX && column <= upperBoundX && row >= lowerBoundY && row <= upperBoundY)
+                {
+                    colorPair = VISUAL_HIGHLIGHT_PAIR;
+                }
+                break;
+            }
+            default:
+                if (row == relativeCursorY)
+                {
+                    colorPair = PATH_COLOR_PAIR;
+                }
+                break;
+        }
+
+        attron(COLOR_PAIR(colorPair));
+
         if (column + m_reservedColumnsForLineNumbering >= COLS)
         {
+            if (COLS - indexOfFirstNonSpace - m_reservedColumnsForLineNumbering == 0) { return newLinesCreatedByCurrentLine; }
+
             newLinesCreatedByCurrentLine = (column  + m_reservedColumnsForLineNumbering - COLS) / (COLS - indexOfFirstNonSpace - m_reservedColumnsForLineNumbering) + 1;
 
             int newCursorY = row + extraLinesFromWrapping + newLinesCreatedByCurrentLine;
@@ -292,6 +398,8 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         {
             printCharacter(row + extraLinesFromWrapping, column + m_reservedColumnsForLineNumbering, character);
         }
+
+        attroff(COLOR_PAIR(colorPair));
     }
 
     if (!newLinesCreatedByCurrentLine)
@@ -302,20 +410,29 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
 
     // Color the rest of the line the cursor is at
 
-    if (row == relativeCursorY)
+    if (row == relativeCursorY && !inVisualMode)
     {
-        int newCursorY = row + extraLinesFromWrapping + newLinesCreatedByCurrentLine;
-        int newCursorXWithoutOffset = (lineSize + m_reservedColumnsForLineNumbering - COLS) % (COLS - indexOfFirstNonSpace - m_reservedColumnsForLineNumbering);
+        attron(COLOR_PAIR(PATH_COLOR_PAIR));
 
-        for (int i = newCursorXWithoutOffset; i < COLS; i++)
+        int newCursorY = row + extraLinesFromWrapping + newLinesCreatedByCurrentLine;
+        int newCursorX = 0;
+
+        if (newLinesCreatedByCurrentLine)
         {
-            printCharacter(newCursorY, newCursorXWithoutOffset + m_reservedColumnsForLineNumbering + indexOfFirstNonSpace, ' ');
+            newCursorX = (lineSize + m_reservedColumnsForLineNumbering - COLS) % (COLS - indexOfFirstNonSpace - m_reservedColumnsForLineNumbering) + m_reservedColumnsForLineNumbering + indexOfFirstNonSpace;
+        }
+        else { newCursorX = lineSize + m_reservedColumnsForLineNumbering; }
+
+        for (int i = newCursorX; i < COLS; i++)
+        {
+            move(newCursorY, i);
+            addch(' ');
         }
 
         attroff(COLOR_PAIR(PATH_COLOR_PAIR));
     }
 
-    // Draw line numbers
+    // Draw line number
     for (int i = 0; i < m_reservedColumnsForLineNumbering; i++)
     {
         std::string lineNumber;
@@ -366,6 +483,8 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         }
     }
 
+    refresh();
+
     return newLinesCreatedByCurrentLine;
 }
 
@@ -375,6 +494,8 @@ void View::moveCursor(const std::pair<int, int>& cursorPos, int cursorIndexOfFir
     {
         int relativeXAfterWrap = cursorPos.second + m_reservedColumnsForLineNumbering - COLS;
         int lineSizeWithoutIndent = COLS - cursorIndexOfFirstNonSpace - m_reservedColumnsForLineNumbering;
+
+        if (lineSizeWithoutIndent == 0) { return; }
 
         int cursorY = cursorPos.first - m_linesDown + extraLinesFromWrappingBeforeCursor + relativeXAfterWrap / lineSizeWithoutIndent + 1;
         int cursorX = relativeXAfterWrap % lineSizeWithoutIndent + cursorIndexOfFirstNonSpace + m_reservedColumnsForLineNumbering;

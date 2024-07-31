@@ -25,10 +25,13 @@ private:
 
     CircularBuffer m_circularInputBuffer;
 
+    std::pair<int, int> m_cursorPosOnVisualMode;
+
     void handleNormalModeInput(int input);
     void handleCommandModeInput(int input);
     void handleInsertModeInput(int input);
     void handleReplaceCharMode(int input);
+    void handleVisualModes(int input);
 
     void handleCommandBufferInput();
     void handleDeleteCommands(int input);
@@ -50,4 +53,5 @@ public:
     // Getters
     const std::string& commandBuffer() const { return m_commandBuffer; }
     const CircularBuffer& circularBuffer() const { return m_circularInputBuffer; }
+    const std::pair<int, int>& initialVisualModeCursor() const { return m_cursorPosOnVisualMode; }
 };

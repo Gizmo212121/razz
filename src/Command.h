@@ -196,12 +196,14 @@ private:
     int m_x = 0;
     int m_y = 0;
 
+    bool m_headingRight = false;
+
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    ReplaceCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, char character)
-        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_character(character) {}
+    ReplaceCharacterCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, char character, bool headingRight)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_character(character), m_headingRight(headingRight) {}
 };
 
 class InsertLineNormalCommand : public Command
