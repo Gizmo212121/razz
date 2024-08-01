@@ -1,8 +1,117 @@
 #include "Command.h"
 #include "Buffer.h"
 #include "Editor.h"
+#include "Includes.h"
 #include "InputController.h"
 #include "LineGapBuffer.h"
+
+int Command::tabLine(const std::shared_ptr<LineGapBuffer>& line, bool headingRight, int cursorY, int rightwardOffset)
+{
+    if (headingRight)
+    {
+        m_buffer->moveCursor(cursorY, 0);
+
+        for (int i = 0; i < abs(rightwardOffset); i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+
+        return WHITESPACE_PER_TAB;
+    }
+    else
+    {
+        int indexOfFirstNSC = m_buffer->indexOfFirstNonSpaceCharacter(line);
+
+        if (indexOfFirstNSC == 0) { return false; }
+
+        int charactersToDelete = std::min(WHITESPACE_PER_TAB, indexOfFirstNSC);
+
+        m_buffer->moveCursor(cursorY, 0);
+
+        for (int i = 0; i < charactersToDelete; i++)
+        {
+            m_buffer->removeCharacter(false);
+        }
+
+        return charactersToDelete;
+    }
+}
+
+void Command::removeCharactersInRange(int start, int end, int cursorY) const
+{
+    assert(cursorY >= 0);
+    assert(end - start >= 0);
+
+    m_buffer->moveCursor(cursorY, start);
+
+    for (int i = 0; i < end - start; i++)
+    {
+        m_buffer->removeCharacter(false);
+    }
+}
+
+void Command::removeCharactersInRangeAndInsertIntoVector(std::vector<char>& vec, int start, int end, int cursorY) const
+{
+    assert(cursorY >= 0);
+    assert(end - start >= 0);
+
+    vec.reserve(end - start);
+
+    m_buffer->moveCursor(cursorY, start);
+
+    for (int i = 0; i < end - start; i++)
+    {
+        vec.push_back(m_buffer->removeCharacter(false));
+    }
+}
+
+void Command::insertCharactersInRangeFromVector(std::vector<char>& vec, int start, int end, int cursorY) const
+{
+    assert(cursorY >= 0);
+    assert(end - start >= 0);
+
+    m_buffer->moveCursor(cursorY, start);
+
+    for (int i = 0; i < end - start; i++)
+    {
+        m_buffer->insertCharacter(vec[i]);
+    }
+}
+
+int Command::getXCoordinateFromJumpCode(int jumpCode) const
+{
+    switch (jumpCode)
+    {
+        case JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END:
+            return m_buffer->endNextWordIndex();
+            break;
+        case JUMP_FORWARD | JUMP_BY_WORD:
+            return m_buffer->beginningNextWordIndex();
+            break;
+        case JUMP_FORWARD | JUMP_TO_END:
+            return m_buffer->endNextSymbolIndex();
+            break;
+        case JUMP_FORWARD:
+            return m_buffer->beginningNextSymbolIndex();
+            break;
+        case JUMP_BY_WORD | JUMP_TO_END:
+            return m_buffer->endPreviousWordIndex();
+            break;
+        case JUMP_BY_WORD:
+            return m_buffer->beginningPreviousWordIndex();
+            break;
+        case JUMP_TO_END:
+            return m_buffer->endPreviousSymbolIndex();
+            break;
+        case 0:
+            return m_buffer->beginningPreviousSymbolIndex();
+            break;
+        default:
+            exit_curses(0);
+            std::cerr << "Unexpected cursor jump code: " << jumpCode << '\n';
+            exit(1);
+    }
+}
 
 void SetModeCommand::redo() {}
 void SetModeCommand::undo() {}
@@ -35,8 +144,12 @@ void MoveCursorXCommand::redo() {}
 void MoveCursorXCommand::undo() {}
 bool MoveCursorXCommand::execute()
 {
+    int prevCursorX = m_buffer->getCursorPos().second;
     m_buffer->shiftCursorX(deltaX);
-    m_view->display();
+    int postCursorX = m_buffer->getCursorPos().second;
+
+    if (prevCursorX != postCursorX) { m_view->display(); }
+
     return false;
 }
 
@@ -44,8 +157,8 @@ void MoveCursorYCommand::redo() {}
 void MoveCursorYCommand::undo() {}
 bool MoveCursorYCommand::execute()
 {
-    const std::pair<int, int> cursorPos = m_buffer->getCursorPos();
-    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(cursorPos.first);
+    const std::pair<int, int> prevCursorPos = m_buffer->getCursorPos();
+    const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(prevCursorPos.first);
     int lineSize = static_cast<int>(lineGapBuffer->lineSize());
 
     if (lineSize)
@@ -62,7 +175,7 @@ bool MoveCursorYCommand::execute()
 
         if (lineIsAllSpaces)
         {
-            m_buffer->moveCursor(cursorPos.first, 0);
+            m_buffer->moveCursor(prevCursorPos.first, 0);
             for (int i = 0; i < lineSize; i++)
             {
                 m_buffer->removeCharacter(false);
@@ -71,7 +184,11 @@ bool MoveCursorYCommand::execute()
     }
 
     m_buffer->shiftCursorY(deltaY);
-    m_view->display();
+
+    int postCursorY = m_buffer->getCursorPos().first;
+
+    if (postCursorY != prevCursorPos.first) { m_view->display(); }
+
     return false;
 }
 
@@ -95,8 +212,12 @@ void CursorFullRightCommand::redo() {}
 void CursorFullRightCommand::undo() { }
 bool CursorFullRightCommand::execute()
 {
+    int prevCursorX = m_buffer->getCursorPos().second;
     m_buffer->shiftCursorFullRight();
-    m_view->display();
+    int postCursorX = m_buffer->getCursorPos().second;
+
+    if (prevCursorX != postCursorX) { m_view->display(); }
+
     return false;
 }
 
@@ -104,8 +225,12 @@ void CursorFullLeftCommand::redo() {}
 void CursorFullLeftCommand::undo() { }
 bool CursorFullLeftCommand::execute()
 {
+    int prevCursorX = m_buffer->getCursorPos().second;
     m_buffer->shiftCursorFullLeft();
-    m_view->display();
+    int postCursorX = m_buffer->getCursorPos().second;
+
+    if (prevCursorX != postCursorX) { m_view->display(); }
+
     return false;
 }
 
@@ -113,8 +238,12 @@ void CursorFullTopCommand::redo() {}
 void CursorFullTopCommand::undo() { }
 bool CursorFullTopCommand::execute()
 {
+    int prevCursorX = m_buffer->getCursorPos().second;
     m_buffer->shiftCursorFullTop();
-    m_view->display();
+    int postCursorX = m_buffer->getCursorPos().second;
+
+    if (prevCursorX != postCursorX) { m_view->display(); }
+
     return false;
 }
 
@@ -122,8 +251,12 @@ void CursorFullBottomCommand::redo() {}
 void CursorFullBottomCommand::undo() { }
 bool CursorFullBottomCommand::execute()
 {
+    int prevCursorX = m_buffer->getCursorPos().second;
     m_buffer->shiftCursorFullBottom();
-    m_view->display();
+    int postCursorX = m_buffer->getCursorPos().second;
+
+    if (prevCursorX != postCursorX) { m_view->display(); }
+
     return false;
 }
 
@@ -194,6 +327,7 @@ bool RemoveCharacterNormalCommand::execute()
     m_y = cursorPos.first;
 
     if (m_buffer->getLineGapBuffer(m_y)->lineSize() <= 0) { return false; }
+    if (m_buffer->getLineGapBuffer(m_y)->bufferSize() <= 0) { return false; }
     if (m_cursorLeft && m_x == 0) { return false; }
 
     m_character = m_buffer->removeCharacter(m_cursorLeft);
@@ -578,13 +712,8 @@ bool InsertLineInsertCommand::execute()
         }
     }
 
-    m_characters.resize(m_distanceToEndLine);
 
-    for (size_t i = 0; i < m_distanceToEndLine; i++)
-    {
-        m_characters[i] = m_buffer->removeCharacter(false);
-    }
-
+    removeCharactersInRangeAndInsertIntoVector(m_characters, m_x, lineSize, m_y);
 
     m_buffer->insertLine(true);
 
@@ -593,10 +722,7 @@ bool InsertLineInsertCommand::execute()
         m_buffer->insertCharacter(' ');
     }
 
-    for (size_t i = 0; i < m_distanceToEndLine; i++)
-    {
-        m_buffer->insertCharacter(m_characters[i]);
-    }
+    insertCharactersInRangeFromVector(m_characters, m_x, lineSize, m_y + 1);
 
     m_buffer->moveCursor(m_y + 1, m_xPositionOfFirstCharacter);
 
@@ -617,9 +743,14 @@ void RemoveLineCommand::undo()
     int targetY;
     if (m_y == 0) { targetY = 0; }
     else { targetY = m_y; }
-
     m_buffer->moveCursor(targetY, m_x);
+
     m_buffer->insertLine(m_line, false);
+
+    m_buffer->moveCursor(m_y + 1, m_x);
+
+    if (m_deletedOnlyLine == true) { m_buffer->removeLine(); }
+
     m_buffer->moveCursor(m_y, m_x);
 
     if (m_renderUndo) { m_view->display(); }
@@ -631,6 +762,7 @@ bool RemoveLineCommand::execute()
     m_y = cursorPos.first;
 
     if (m_buffer->getFileGapBuffer().numberOfLines() == 1 && m_buffer->getLineGapBuffer(m_y)->lineSize() == 0) { m_view->display(); return false; }
+    else if (m_buffer->getFileGapBuffer().numberOfLines() == 1) { m_deletedOnlyLine = true; }
 
     m_line = m_buffer->removeLine();
     m_buffer->shiftCursorX(0);
@@ -682,88 +814,29 @@ void JumpCursorCommand::redo() {}
 void JumpCursorCommand::undo() {}
 bool JumpCursorCommand::execute()
 {
-    int cursorY = m_buffer->getCursorPos().first;
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
 
-    switch (m_jumpCode)
+    int targetX = getXCoordinateFromJumpCode(m_jumpCode);
+
+    if (targetX != cursorPos.second)
     {
-        case JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END:
-            m_buffer->moveCursor(cursorY, m_buffer->endNextWordIndex());
-            break;
-        case JUMP_FORWARD | JUMP_BY_WORD:
-            m_buffer->moveCursor(cursorY, m_buffer->beginningNextWordIndex());
-            break;
-        case JUMP_FORWARD | JUMP_TO_END:
-            m_buffer->moveCursor(cursorY, m_buffer->endNextSymbolIndex());
-            break;
-        case JUMP_FORWARD:
-            m_buffer->moveCursor(cursorY, m_buffer->beginningNextSymbolIndex());
-            break;
-        case JUMP_BY_WORD | JUMP_TO_END:
-            m_buffer->moveCursor(cursorY, m_buffer->endPreviousWordIndex());
-            break;
-        case JUMP_BY_WORD:
-            m_buffer->moveCursor(cursorY, m_buffer->beginningPreviousWordIndex());
-            break;
-        case JUMP_TO_END:
-            m_buffer->moveCursor(cursorY, m_buffer->endPreviousSymbolIndex());
-            break;
-        case 0:
-            m_buffer->moveCursor(cursorY, m_buffer->beginningPreviousSymbolIndex());
-            break;
-        default:
-            exit_curses(0);
-            std::cerr << "Unexpected cursor jump code: " << m_jumpCode << '\n';
-            exit(1);
-    }
+        m_buffer->moveCursor(cursorPos.first, targetX);
 
-    m_view->display();
+        m_view->display();
+    }
 
     return false;
 }
 
 void JumpCursorDeleteWordCommand::redo()
 {
-    m_buffer->moveCursor(m_y, m_x);
-
-    if (m_differenceX >= 0)
-    {
-        for (int i = 0; i < m_differenceX; i++)
-        {
-            m_buffer->removeCharacter(false);
-        }
-    }
-    else
-    {
-        m_buffer->moveCursor(m_y, m_x + m_differenceX);
-
-        for (int i = 0; i < - m_differenceX; i++)
-        {
-            m_buffer->removeCharacter(false);
-        }
-    }
+    removeCharactersInRange(m_startX, m_endX, m_y);
 
     if (m_renderExecute) { m_view->display(); }
 }
 void JumpCursorDeleteWordCommand::undo()
 {
-    m_buffer->moveCursor(m_y, m_x);
-
-    if (m_differenceX >= 0)
-    {
-        for (int i = 0; i < m_differenceX; i++)
-        {
-            m_buffer->insertCharacter(m_characters[i]);
-        }
-    }
-    else
-    {
-        m_buffer->moveCursor(m_y, m_x + m_differenceX);
-
-        for (int i = 0; i < - m_differenceX; i++)
-        {
-            m_buffer->insertCharacter(m_characters[i]);
-        }
-    }
+    insertCharactersInRangeFromVector(m_characters, m_startX, m_endX, m_y);
 
     m_buffer->moveCursor(m_y, m_x);
     m_buffer->shiftCursorX(0);
@@ -776,62 +849,16 @@ bool JumpCursorDeleteWordCommand::execute()
     m_x = cursorPos.second;
     m_y = cursorPos.first;
 
-    int targetX;
+    int targetX = getXCoordinateFromJumpCode(m_jumpCode);
 
-    switch (m_jumpCode)
-    {
-        case JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END:
-            targetX = m_buffer->endNextWordIndex();
-            break;
-        case JUMP_FORWARD | JUMP_BY_WORD:
-            targetX = m_buffer->beginningNextWordIndex();
-            break;
-        case JUMP_FORWARD | JUMP_TO_END:
-            targetX = m_buffer->endNextSymbolIndex();
-            break;
-        case JUMP_FORWARD:
-            targetX = m_buffer->beginningNextSymbolIndex();
-            break;
-        case JUMP_BY_WORD | JUMP_TO_END:
-            targetX = m_buffer->endPreviousWordIndex();
-            break;
-        case JUMP_BY_WORD:
-            targetX = m_buffer->beginningPreviousWordIndex();
-            break;
-        case JUMP_TO_END:
-            targetX = m_buffer->endPreviousSymbolIndex();
-            break;
-        case 0:
-            targetX = m_buffer->beginningPreviousSymbolIndex();
-            break;
-        default:
-            exit_curses(0);
-            std::cerr << "Unexpected cursor jump code: " << m_jumpCode << '\n';
-            exit(1);
-    }
+    int differenceX = targetX - m_x;
 
-    m_differenceX = targetX - m_x;
+    m_startX = std::min(targetX, m_x);
+    m_endX = std::max(targetX, m_x);
 
-    if (m_differenceX == 0) { return false; }
+    if (differenceX == 0) { return false; }
 
-    m_characters.reserve(abs(m_differenceX));
-
-    if (m_differenceX >= 0)
-    {
-        for (int i = 0; i < m_differenceX; i++)
-        {
-            m_characters[i] = m_buffer->removeCharacter(false);
-        }
-    }
-    else
-    {
-        m_buffer->moveCursor(m_y, targetX);
-
-        for (int i = 0; i < - m_differenceX; i++)
-        {
-            m_characters[i] = m_buffer->removeCharacter(false);
-        }
-    }
+    removeCharactersInRangeAndInsertIntoVector(m_characters, m_startX, m_endX, m_y);
 
     if (m_renderExecute) { m_view->display(); }
 
@@ -842,45 +869,13 @@ void JumpCursorDeletePreviousWordInsertModeCommand::redo()
 {
     m_buffer->moveCursor(m_y, m_x);
 
-    if (m_differenceX >= 0)
-    {
-        for (int i = 0; i < m_differenceX; i++)
-        {
-            m_buffer->removeCharacter(false);
-        }
-    }
-    else
-    {
-        m_buffer->moveCursor(m_y, m_x + m_differenceX);
-
-        for (int i = 0; i < - m_differenceX; i++)
-        {
-            m_buffer->removeCharacter(false);
-        }
-    }
+    removeCharactersInRange(m_targetX, m_x, m_y);
 
     if (m_renderExecute) { m_view->display(); }
 }
 void JumpCursorDeletePreviousWordInsertModeCommand::undo()
 {
-    m_buffer->moveCursor(m_y, m_x);
-
-    if (m_differenceX >= 0)
-    {
-        for (int i = 0; i < m_differenceX; i++)
-        {
-            m_buffer->insertCharacter(m_characters[i]);
-        }
-    }
-    else
-    {
-        m_buffer->moveCursor(m_y, m_x + m_differenceX);
-
-        for (int i = 0; i < - m_differenceX; i++)
-        {
-            m_buffer->insertCharacter(m_characters[i]);
-        }
-    }
+    insertCharactersInRangeFromVector(m_characters, m_targetX, m_x, m_y);
 
     m_buffer->moveCursor(m_y, m_x);
     m_buffer->shiftCursorX(0);
@@ -895,36 +890,183 @@ bool JumpCursorDeletePreviousWordInsertModeCommand::execute()
 
     if (m_x == 0) { return false; }
 
-    int targetX = m_buffer->beginningPreviousWordIndex();
+    m_targetX = m_buffer->beginningPreviousWordIndex();
+    if (m_targetX == m_x) { m_targetX = m_buffer->beginningPreviousSymbolIndex(); }
+    if (m_targetX == m_x) { m_targetX = 0; } 
 
-    if (targetX == m_x) { targetX = m_buffer->beginningPreviousSymbolIndex(); }
+    int differenceX = m_targetX - m_x;
 
-    if (targetX == m_x) { targetX = 0; } 
+    if (differenceX == 0) { return false; }
 
-    m_differenceX = targetX - m_x;
+    removeCharactersInRangeAndInsertIntoVector(m_characters, m_targetX, m_x, cursorPos.first);
 
-    if (m_differenceX == 0) { return false; }
+    m_buffer->moveCursor(m_y, m_targetX);
 
-    m_characters.reserve(abs(m_differenceX));
+    if (m_renderExecute) { m_view->display(); }
 
-    if (m_differenceX >= 0)
+    return true;
+}
+
+void RemoveLinesVisualLineModeCommand::redo()
+{
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
     {
-        for (int i = 0; i < m_differenceX; i++)
-        {
-            m_characters[i] = m_buffer->removeCharacter(false);
-        }
+        m_buffer->removeLine();
+    }
+
+    if (m_initialY >= m_upperBoundY)
+    {
+        m_buffer->moveCursor(m_initialY + m_lowerBoundY - m_upperBoundY, m_initialX);
     }
     else
     {
-        m_buffer->moveCursor(m_y, targetX);
+        m_buffer->moveCursor(m_initialY, m_initialX);
+    }
 
-        for (int i = 0; i < - m_differenceX; i++)
+    if (m_renderExecute) { m_view->display(); }
+}
+void RemoveLinesVisualLineModeCommand::undo()
+{
+    int targetY = std::max(0, m_lowerBoundY - 1);
+    m_buffer->moveCursor(targetY, 0);
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    {
+        if (m_lowerBoundY == 0 && i == 0)
         {
-            m_characters[i] = m_buffer->removeCharacter(false);
+
+            m_buffer->insertLine(m_lines[i], false);
+        }
+        else
+        {
+            m_buffer->insertLine(m_lines[i], true);
         }
     }
 
-    m_buffer->moveCursor(m_y, m_x + 1);
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    if (m_renderUndo) { m_view->display(); }
+}
+bool RemoveLinesVisualLineModeCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_initialX = cursorPos.second;
+    m_initialY = cursorPos.first;
+    const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+
+    m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
+    m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+    m_lines.reserve(m_upperBoundY - m_lowerBoundY);
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    {
+        m_lines.push_back(m_buffer->removeLine());
+    }
+
+    m_buffer->moveCursor(m_lowerBoundY, m_initialX);
+
+    m_editor->setMode(NORMAL_MODE);
+
+    if (m_renderExecute) { m_view->display(); }
+
+    return true;
+}
+
+void TabLineCommand::redo()
+{
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    tabLine(m_buffer->getLineGapBuffer(m_initialY), m_headingRight, m_initialY);
+
+    m_buffer->moveCursor(m_initialY, m_initialX);
+    m_buffer->shiftCursorX(0);
+
+    if (m_renderExecute) { m_view->display(); }
+}
+void TabLineCommand::undo()
+{
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    tabLine(m_buffer->getLineGapBuffer(m_initialY), !m_headingRight, m_initialY, m_differenceInCharacters);
+
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    if (m_renderUndo) { m_view->display(); }
+}
+bool TabLineCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_initialX = cursorPos.second;
+    m_initialY = cursorPos.first;
+
+    m_differenceInCharacters = tabLine(m_buffer->getLineGapBuffer(m_initialY), m_headingRight, m_initialY);
+
+    if (m_differenceInCharacters == 0) { return false; }
+
+    m_buffer->moveCursor(m_initialY, m_initialX);
+    m_buffer->shiftCursorX(0);
+
+    if (m_renderExecute) { m_view->display(); }
+
+    return true;
+}
+
+void TabLineVisualCommand::redo()
+{
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    {
+        tabLine(m_buffer->getLineGapBuffer(m_lowerBoundY + i), m_headingRight, m_lowerBoundY + i);
+    }
+
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    if (m_renderExecute) { m_view->display(); }
+}
+void TabLineVisualCommand::undo()
+{
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    {
+        tabLine(m_buffer->getLineGapBuffer(m_lowerBoundY + i), !m_headingRight, m_lowerBoundY + i, m_differenceInCharacters[i]);
+    }
+
+    m_buffer->moveCursor(m_initialY, m_initialX);
+
+    if (m_renderUndo) { m_view->display(); }
+}
+bool TabLineVisualCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_initialX = cursorPos.second;
+    m_initialY = cursorPos.first;
+    const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+
+    m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
+    m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+
+    m_differenceInCharacters.reserve(m_upperBoundY - m_lowerBoundY);
+
+    bool madeChange = false;
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    {
+        m_differenceInCharacters.push_back(tabLine(m_buffer->getLineGapBuffer(m_lowerBoundY + i), m_headingRight, m_lowerBoundY + i));
+
+        if (m_differenceInCharacters[i] != 0) { madeChange = true; }
+    }
+
+    if (!madeChange) { return false; }
+
+    m_buffer->moveCursor(m_initialY, m_initialX);
+    m_buffer->shiftCursorX(0);
 
     if (m_renderExecute) { m_view->display(); }
 

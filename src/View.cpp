@@ -25,16 +25,6 @@ void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveTh
     }
 }
 
-int View::indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const
-{
-    for (size_t i = 0; i < line->lineSize(); i++)
-    {
-        if (line->at(i) != ' ') { return static_cast<int>(i); }
-    }
-
-    return 0;
-}
-
 int View::numberOfDigits(int x)
 {
     int count = 0;
@@ -65,7 +55,7 @@ int View::wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLi
 
         maxRender = maxRenderCopy - extraLinesFromWrapping;
 
-        int indexOfFirstNonSpace = indexOfFirstNonSpaceCharacter(lineGapBuffer);
+        int indexOfFirstNonSpace = m_buffer->indexOfFirstNonSpaceCharacter(lineGapBuffer);
 
         if (indexOfFirstNonSpace >= COLS)
             continue;
@@ -117,7 +107,7 @@ void View::display()
         if (!lineGapBuffer)
             break;
 
-        int indexOfFirstNonSpace = indexOfFirstNonSpaceCharacter(lineGapBuffer);
+        int indexOfFirstNonSpace = m_buffer->indexOfFirstNonSpaceCharacter(lineGapBuffer);
 
         if (indexOfFirstNonSpace >= COLS - 1)
             continue;

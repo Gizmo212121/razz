@@ -18,6 +18,19 @@ protected:
     View* m_view;
     CommandQueue* m_commandQueue;
 
+    // Removes characters in a line gap buffer from start to end inclusive
+    void removeCharactersInRange(int start, int end, int cursorY) const;
+    // Removes characters in a range from start to end inclusive, then inserts the removed characters into a vector.
+    // Pre: This vector is assumed to be empty, as it is resized inside the function, end - start > 0
+    void removeCharactersInRangeAndInsertIntoVector(std::vector<char>& vec, int start, int end, int cursorY) const;
+    // Takes characters from a char vector and inserts them one by one into a line gap buffer from start to end inclusive
+    void insertCharactersInRangeFromVector(std::vector<char>& vec, int start, int end, int cursorY) const;
+    // Takes a jump code and returns the absolute x coordinate of the resulting jump
+    int getXCoordinateFromJumpCode(int jumpCode) const;
+    // Tabs a line left or right, returns the directional-displacement in characters
+    int tabLine(const std::shared_ptr<LineGapBuffer>& line, bool headingRight, int cursorY, int rightwardOffset = WHITESPACE_PER_TAB);
+
+
 public:
 
     bool m_renderExecute;
@@ -252,6 +265,8 @@ private:
     int m_x = 0;
     int m_y = 0;
 
+    bool m_deletedOnlyLine = false;
+
     void redo() override;
     void undo() override;
     bool execute() override;
@@ -310,7 +325,9 @@ private:
     std::vector<char> m_characters;
     int m_jumpCode;
 
-    int m_differenceX;
+    // int m_differenceX;
+    int m_startX;
+    int m_endX;
 
     void redo() override;
     void undo() override;
@@ -328,7 +345,7 @@ private:
 
     std::vector<char> m_characters;
 
-    int m_differenceX;
+    int m_targetX;
 
     void redo() override;
     void undo() override;
@@ -336,4 +353,64 @@ private:
 public:
     JumpCursorDeletePreviousWordInsertModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
+class RemoveLinesVisualLineModeCommand : public Command
+{
+private:
+    int m_initialX = 0;
+    int m_initialY = 0;
+    int m_lowerBoundY = 0;
+    int m_upperBoundY = 0;
+
+    std::vector<std::shared_ptr<LineGapBuffer>> m_lines;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    RemoveLinesVisualLineModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
+class TabLineCommand : public Command
+{
+private:
+    int m_initialX = 0;
+    int m_initialY = 0;
+
+    bool m_headingRight;
+
+    int m_differenceInCharacters = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    TabLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool headingRight)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_headingRight(headingRight) {}
+};
+
+class TabLineVisualCommand : public Command
+{
+private:
+    int m_initialX = 0;
+    int m_initialY = 0;
+
+    int m_lowerBoundY = 0;
+    int m_upperBoundY = 0;
+
+    bool m_headingRight;
+
+    std::vector<int> m_differenceInCharacters;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    TabLineVisualCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool headingRight)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_headingRight(headingRight) {}
 };

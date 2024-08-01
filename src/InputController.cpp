@@ -9,6 +9,8 @@
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
 {
+    m_editor->commandQueue().execute<InsertCharacterCommand>(true, 1, ' ');
+    m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(true, 1, true);
 }
 
 int InputController::repetitionCount()
@@ -201,6 +203,35 @@ void InputController::handleNormalModeInput(int input)
             break;
         case c:
             m_commandBuffer.push_back('c');
+            break;
+        case LESS_THAN_SIGN:
+        {
+            int repetition = repetitionCount();
+
+            if (repetition > 1)
+            {
+                m_editor->commandQueue().execute<TabLineCommand>(false, repetition, false);
+            }
+            else
+            {
+                m_editor->commandQueue().execute<TabLineCommand>(true, 1, false);
+            }
+
+            break;
+        }
+        case GREATER_THAN_SIGN:
+        {
+            int repetition = repetitionCount();
+
+            if (repetition > 1)
+            {
+                m_editor->commandQueue().execute<TabLineCommand>(false, repetition, true);
+            }
+            else
+            {
+                m_editor->commandQueue().execute<TabLineCommand>(true, 1, true);
+            }
+        }
             break;
         case v:
         {
@@ -494,7 +525,8 @@ void InputController::handleCommandBufferInput()
 
 void InputController::handleDeleteCommands(int input)
 {
-    size_t rep = std::min(repetitionCount(), static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()));
+    int numberOfLines = static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines());
+    int rep = std::min(repetitionCount(), numberOfLines);
 
     switch (input)
     {
@@ -525,6 +557,26 @@ void InputController::handleDeleteCommands(int input)
         case Q:
             m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_TO_END);
             break;
+        case i:
+        {
+            int modifiedRep = std::min(rep + 1, numberOfLines);
+
+            m_editor->commandQueue().execute<RemoveLineCommand>(false, modifiedRep);
+            break;
+        }
+        case p:
+        {
+            int modifiedrep = std::min(rep + 1, numberOfLines);
+
+            bool onLastLine = (m_editor->buffer().getCursorPos().first == numberOfLines - 1);
+
+            for (int i = 0; i < modifiedrep; i++)
+            {
+                m_editor->commandQueue().execute<RemoveLineCommand>(true, 1);
+                if (!onLastLine) { m_editor->buffer().shiftCursorY(-1); }
+            }
+            break;
+        }
         default:
             // TODO: Send signal that command isn't valid
             break;
@@ -668,5 +720,47 @@ void InputController::handleVisualModes(int input)
         case P:
             m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
             break;
+        case d:
+            if (currentMode == VISUAL_LINE_MODE)
+            {
+                m_editor->commandQueue().execute<RemoveLinesVisualLineModeCommand>(false, 1);
+            }
+            else if (currentMode == VISUAL_MODE)
+            {
+
+            }
+            else
+            {
+
+            }
+            break;
+        case LESS_THAN_SIGN:
+        {
+            int repetition = repetitionCount();
+
+            if (repetition > 1)
+            {
+                m_editor->commandQueue().execute<TabLineVisualCommand>(false, repetition, false);
+            }
+            else
+            {
+                m_editor->commandQueue().execute<TabLineVisualCommand>(true, 1, false);
+            }
+
+            break;
+        }
+        case GREATER_THAN_SIGN:
+        {
+            int repetition = repetitionCount();
+
+            if (repetition > 1)
+            {
+                m_editor->commandQueue().execute<TabLineVisualCommand>(false, repetition, true);
+            }
+            else
+            {
+                m_editor->commandQueue().execute<TabLineVisualCommand>(true, 1, true);
+            }
+        }
     }
 }

@@ -25,7 +25,6 @@ private:
     void adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold);
     void printCharacter(int y, int x, char character);
     void clearRemainingLines(int maxRender, int extraLinesFromWrapping);
-    int indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const;
     int numberOfDigits(int x);
     void moveCursor(const std::pair<int, int>& cursorPos, int cursorIndexOfFirstNonSpace, int extraLinesFromWrappingBeforeCursor);
     int wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLines, int relativeCursorY);

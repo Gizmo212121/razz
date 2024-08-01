@@ -59,6 +59,8 @@ public:
     int beginningPreviousWordIndex();
     int beginningPreviousSymbolIndex();
 
+    int indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const;
+
 
     void insertCharacter(char character);
     char removeCharacter(bool cursorHeadingLeft = true);

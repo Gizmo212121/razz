@@ -316,6 +316,8 @@ enum KEYS
     APOSTROPHE = 39,
     COLON = 58,
     SEMICOLON = 59,
+    LESS_THAN_SIGN = 60,
+    GREATER_THAN_SIGN = 62,
     A = 65,
     B = 66,
     C = 67,

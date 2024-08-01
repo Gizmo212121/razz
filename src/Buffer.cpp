@@ -707,3 +707,13 @@ int Buffer::beginningPreviousSymbolIndex()
 
     return m_cursorX;
 }
+
+int Buffer::indexOfFirstNonSpaceCharacter(const std::shared_ptr<LineGapBuffer>& line) const
+{
+    for (size_t i = 0; i < line->lineSize(); i++)
+    {
+        if (line->at(i) != ' ') { return static_cast<int>(i); }
+    }
+
+    return 0;
+}
