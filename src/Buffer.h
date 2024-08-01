@@ -2,14 +2,10 @@
 
 #include "FileGapBuffer.h"
 
-class View;
-
 class Buffer
 {
 
 private:
-
-    View* m_view;
 
     std::filesystem::path m_filePath;
 
@@ -26,7 +22,7 @@ private:
 public:
 
     Buffer();
-    Buffer(const std::string& fileName, View* view);
+    Buffer(const std::string& fileName);
 
     void moveCursor(int y, int x);
 

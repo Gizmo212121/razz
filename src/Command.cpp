@@ -1021,29 +1021,45 @@ void RemoveLinesVisualModeCommand::undo()
 }
 bool RemoveLinesVisualModeCommand::execute()
 {
-    // const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
-    // m_initialX = cursorPos.second;
-    // m_initialY = cursorPos.first;
-    // const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
-    //
-    // m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
-    // m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
-    //
-    // m_buffer->moveCursor(m_lowerBoundY, 0);
-    //
-    // m_lines.reserve(m_upperBoundY - m_lowerBoundY);
-    //
-    // for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
-    // {
-    //     m_lines.push_back(m_buffer->removeLine());
-    // }
-    //
-    // m_buffer->moveCursor(m_lowerBoundY, m_initialX);
-    //
-    // m_editor->setMode(NORMAL_MODE);
-    //
-    // if (m_renderExecute) { m_view->display(); }
-    //
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_initialX = cursorPos.second;
+    m_initialY = cursorPos.first;
+    const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+
+    m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
+    m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+
+    m_lowerBoundX = std::min(cursorPos.second, previousVisualPos.second);
+    m_upperBoundX = std::max(cursorPos.second, previousVisualPos.second);
+
+    bool isWithinXBounds = (column >= lowerBoundX && column <= upperBoundX);
+
+    int differenceY = m_upperBoundY - m_lowerBoundY;
+
+    if (differenceY == 0)
+    {
+
+    }
+
+    for (int i = m_lowerBoundY; i <= m_upperBoundY; i++)
+    {
+        // Remove the characters/lines
+    }
+
+
+    m_lines.reserve(m_upperBoundY - m_lowerBoundY);
+
+    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    {
+        m_lines.push_back(m_buffer->removeLine());
+    }
+
+    m_buffer->moveCursor(m_lowerBoundY, m_initialX);
+
+    m_editor->setMode(NORMAL_MODE);
+
+    if (m_renderExecute) { m_view->display(); }
+
     return true;
 }
 

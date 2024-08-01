@@ -3,8 +3,8 @@
 #include "View.h"
 #include <filesystem>
 
-Buffer::Buffer(const std::string& fileName, View* view)
-    : m_view(view), m_filePath(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
+Buffer::Buffer(const std::string& fileName)
+    : m_filePath(fileName), m_file(1), m_cursorX(0), m_cursorY(0), m_lastXSinceYMove(0)
 {
     if (fileName == "NO_NAME")
     {

@@ -31,6 +31,7 @@ private:
 
     int printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY);
     void printBufferInformationLine(const std::pair<int, int>& cursorPos);
+    int getColorPair(MODE currentMode, int row, int column, const std::pair<int, int>& cursorPos, int relativeCursorY) const;
 
 public:
 

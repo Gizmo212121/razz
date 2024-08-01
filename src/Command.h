@@ -381,6 +381,8 @@ private:
     int m_initialY = 0;
     int m_lowerBoundY = 0;
     int m_upperBoundY = 0;
+    int m_lowerBoundX = 0;
+    int m_upperBoundX = 0;
 
     std::vector<char> m_lowerBoundCharacters;
     std::vector<std::shared_ptr<LineGapBuffer>> m_intermediaryLines;

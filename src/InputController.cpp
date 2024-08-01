@@ -160,7 +160,6 @@ void InputController::handleNormalModeInput(int input)
             break;
         case o:
             m_editor->commandQueue().execute<InsertLineNormalCommand>(true, 1, true);
-            // m_editor->commandQueue().execute<InsertLineNormalCommand>(false, 1, true);
             break;
         case O:
             m_editor->commandQueue().execute<InsertLineNormalCommand>(true, 1, false);
