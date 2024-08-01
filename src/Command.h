@@ -374,6 +374,27 @@ public:
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
 };
 
+class RemoveLinesVisualModeCommand : public Command
+{
+private:
+    int m_initialX = 0;
+    int m_initialY = 0;
+    int m_lowerBoundY = 0;
+    int m_upperBoundY = 0;
+
+    std::vector<char> m_lowerBoundCharacters;
+    std::vector<std::shared_ptr<LineGapBuffer>> m_intermediaryLines;
+    std::vector<char> m_upperBoundCharacters;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    RemoveLinesVisualModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
 class TabLineCommand : public Command
 {
 private:

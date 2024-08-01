@@ -977,6 +977,76 @@ bool RemoveLinesVisualLineModeCommand::execute()
     return true;
 }
 
+void RemoveLinesVisualModeCommand::redo()
+{
+    // m_buffer->moveCursor(m_lowerBoundY, 0);
+    //
+    // for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    // {
+    //     m_buffer->removeLine();
+    // }
+    //
+    // if (m_initialY >= m_upperBoundY)
+    // {
+    //     m_buffer->moveCursor(m_initialY + m_lowerBoundY - m_upperBoundY, m_initialX);
+    // }
+    // else
+    // {
+    //     m_buffer->moveCursor(m_initialY, m_initialX);
+    // }
+    //
+    // if (m_renderExecute) { m_view->display(); }
+}
+void RemoveLinesVisualModeCommand::undo()
+{
+    // int targetY = std::max(0, m_lowerBoundY - 1);
+    // m_buffer->moveCursor(targetY, 0);
+    //
+    // for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    // {
+    //     if (m_lowerBoundY == 0 && i == 0)
+    //     {
+    //
+    //         m_buffer->insertLine(m_lines[i], false);
+    //     }
+    //     else
+    //     {
+    //         m_buffer->insertLine(m_lines[i], true);
+    //     }
+    // }
+    //
+    // m_buffer->moveCursor(m_initialY, m_initialX);
+    //
+    // if (m_renderUndo) { m_view->display(); }
+}
+bool RemoveLinesVisualModeCommand::execute()
+{
+    // const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    // m_initialX = cursorPos.second;
+    // m_initialY = cursorPos.first;
+    // const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+    //
+    // m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
+    // m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+    //
+    // m_buffer->moveCursor(m_lowerBoundY, 0);
+    //
+    // m_lines.reserve(m_upperBoundY - m_lowerBoundY);
+    //
+    // for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    // {
+    //     m_lines.push_back(m_buffer->removeLine());
+    // }
+    //
+    // m_buffer->moveCursor(m_lowerBoundY, m_initialX);
+    //
+    // m_editor->setMode(NORMAL_MODE);
+    //
+    // if (m_renderExecute) { m_view->display(); }
+    //
+    return true;
+}
+
 void TabLineCommand::redo()
 {
     m_buffer->moveCursor(m_initialY, m_initialX);
