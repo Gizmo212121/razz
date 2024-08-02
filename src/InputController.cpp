@@ -726,7 +726,7 @@ void InputController::handleVisualModes(int input)
             }
             else if (currentMode == VISUAL_MODE)
             {
-
+                m_editor->commandQueue().execute<RemoveLinesVisualModeCommand>(false, 1);
             }
             else
             {

@@ -377,8 +377,10 @@ public:
 class RemoveLinesVisualModeCommand : public Command
 {
 private:
-    int m_initialX = 0;
-    int m_initialY = 0;
+    int m_cursorX = 0;
+    int m_cursorY = 0;
+    int m_previousVisualX = 0;
+    int m_previousVisualY = 0;
     int m_lowerBoundY = 0;
     int m_upperBoundY = 0;
     int m_lowerBoundX = 0;
@@ -386,7 +388,6 @@ private:
 
     std::vector<char> m_lowerBoundCharacters;
     std::vector<std::shared_ptr<LineGapBuffer>> m_intermediaryLines;
-    std::vector<char> m_upperBoundCharacters;
 
     void redo() override;
     void undo() override;
@@ -394,6 +395,32 @@ private:
 
 public:
     RemoveLinesVisualModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
+class RemoveLinesVisualBlockModeCommand : public Command
+{
+private:
+    int m_cursorX = 0;
+    int m_cursorY = 0;
+
+    int m_previousVisualX = 0;
+    int m_previousVisualY = 0;
+
+    int m_lowerBoundY = 0;
+    int m_upperBoundY = 0;
+
+    int m_lowerBoundX = 0;
+    int m_upperBoundX = 0;
+
+    std::vector<std::vector<char>> m_lines;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    RemoveLinesVisualBlockModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
 };
 

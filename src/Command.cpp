@@ -238,11 +238,11 @@ void CursorFullTopCommand::redo() {}
 void CursorFullTopCommand::undo() { }
 bool CursorFullTopCommand::execute()
 {
-    int prevCursorX = m_buffer->getCursorPos().second;
+    int prevCursorY = m_buffer->getCursorPos().first;
     m_buffer->shiftCursorFullTop();
-    int postCursorX = m_buffer->getCursorPos().second;
+    int postCursorY = m_buffer->getCursorPos().first;
 
-    if (prevCursorX != postCursorX) { m_view->display(); }
+    if (m_renderExecute && prevCursorY != postCursorY) { m_view->display(); }
 
     return false;
 }
@@ -251,11 +251,11 @@ void CursorFullBottomCommand::redo() {}
 void CursorFullBottomCommand::undo() { }
 bool CursorFullBottomCommand::execute()
 {
-    int prevCursorX = m_buffer->getCursorPos().second;
+    int prevCursorY = m_buffer->getCursorPos().first;
     m_buffer->shiftCursorFullBottom();
-    int postCursorX = m_buffer->getCursorPos().second;
+    int postCursorY = m_buffer->getCursorPos().first;
 
-    if (prevCursorX != postCursorX) { m_view->display(); }
+    if (m_renderExecute && prevCursorY != postCursorY) { m_view->display(); }
 
     return false;
 }
@@ -979,82 +979,237 @@ bool RemoveLinesVisualLineModeCommand::execute()
 
 void RemoveLinesVisualModeCommand::redo()
 {
-    // m_buffer->moveCursor(m_lowerBoundY, 0);
-    //
-    // for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
-    // {
-    //     m_buffer->removeLine();
-    // }
-    //
-    // if (m_initialY >= m_upperBoundY)
-    // {
-    //     m_buffer->moveCursor(m_initialY + m_lowerBoundY - m_upperBoundY, m_initialX);
-    // }
-    // else
-    // {
-    //     m_buffer->moveCursor(m_initialY, m_initialX);
-    // }
-    //
-    // if (m_renderExecute) { m_view->display(); }
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+    for (int i = m_lowerBoundY; i <= m_upperBoundY; i++)
+    {
+        if (i == m_lowerBoundY)
+        {
+            if (m_lowerBoundY == m_upperBoundY)
+            {
+                removeCharactersInRange(m_lowerBoundX, m_upperBoundX + 1, m_lowerBoundY);
+            }
+            else if (m_lowerBoundY < m_cursorY)
+            {
+                removeCharactersInRange(m_previousVisualX, m_buffer->getLineGapBuffer(m_lowerBoundY)->lineSize(), m_lowerBoundY);
+            }
+            else
+            {
+                removeCharactersInRange(m_cursorX, m_buffer->getLineGapBuffer(m_lowerBoundY)->lineSize(), m_lowerBoundY);
+            }
+        }
+        else
+        {
+            m_buffer->moveCursor(m_lowerBoundY + 1, 0);
+            m_intermediaryLines.push_back(m_buffer->removeLine());
+        }
+    }
+
+    // Append everything after the cursor on the last line to the first line
+    if (m_upperBoundY - m_lowerBoundY > 0)
+    {
+        const std::shared_ptr<LineGapBuffer>& lastLine = m_intermediaryLines[m_intermediaryLines.size() - 1];
+
+        if (m_lowerBoundY == m_cursorY)
+        {
+            m_buffer->moveCursor(m_lowerBoundY, m_cursorX);
+
+            for (size_t i = m_previousVisualX + 1; i < lastLine->lineSize(); i++)
+            {
+                m_buffer->insertCharacter(lastLine->at(i));
+            }
+        }
+        else
+        {
+            m_buffer->moveCursor(m_lowerBoundY, m_previousVisualX);
+
+            for (size_t i = m_cursorX + 1; i < lastLine->lineSize(); i++)
+            {
+                m_buffer->insertCharacter(lastLine->at(i));
+            }
+        }
+    }
+
+    m_buffer->moveCursor(m_lowerBoundY, m_upperBoundX);
+    m_buffer->shiftCursorX(0);
+
+    if (m_renderExecute) { m_view->display(); }
 }
 void RemoveLinesVisualModeCommand::undo()
 {
-    // int targetY = std::max(0, m_lowerBoundY - 1);
-    // m_buffer->moveCursor(targetY, 0);
-    //
-    // for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
-    // {
-    //     if (m_lowerBoundY == 0 && i == 0)
-    //     {
-    //
-    //         m_buffer->insertLine(m_lines[i], false);
-    //     }
-    //     else
-    //     {
-    //         m_buffer->insertLine(m_lines[i], true);
-    //     }
-    // }
-    //
-    // m_buffer->moveCursor(m_initialY, m_initialX);
-    //
-    // if (m_renderUndo) { m_view->display(); }
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+    // Append everything after the cursor on the last line to the first line
+    if (m_upperBoundY - m_lowerBoundY > 0)
+    {
+        const std::shared_ptr<LineGapBuffer>& firstLine = m_buffer->getLineGapBuffer(m_lowerBoundY);
+
+        if (m_lowerBoundY == m_cursorY)
+        {
+            removeCharactersInRange(m_cursorX, static_cast<int>(firstLine->lineSize()), m_lowerBoundY);
+
+        }
+        else
+        {
+            removeCharactersInRange(m_previousVisualX, static_cast<int>(firstLine->lineSize()), m_lowerBoundY);
+        }
+    }
+
+    for (int i = m_upperBoundY; i >= m_lowerBoundY; i--)
+    {
+        if (i == m_lowerBoundY)
+        {
+            if (m_lowerBoundY == m_upperBoundY)
+            {
+                insertCharactersInRangeFromVector(m_lowerBoundCharacters, m_lowerBoundX, m_upperBoundX + 1, m_lowerBoundY);
+            }
+            else if (m_lowerBoundY < m_cursorY)
+            {
+                insertCharactersInRangeFromVector(m_lowerBoundCharacters, m_previousVisualX, m_previousVisualX + static_cast<int>(m_lowerBoundCharacters.size()), m_lowerBoundY);
+            }
+            else
+            {
+                insertCharactersInRangeFromVector(m_lowerBoundCharacters, m_cursorX, m_cursorX + static_cast<int>(m_lowerBoundCharacters.size()), m_lowerBoundY);
+            }
+        }
+        else
+        {
+            m_buffer->moveCursor(m_lowerBoundY, 0);
+            m_buffer->insertLine(m_intermediaryLines[i - m_lowerBoundY - 1], true);
+        }
+    }
+
+
+    m_buffer->moveCursor(m_lowerBoundY, m_upperBoundX);
+    m_buffer->shiftCursorX(0);
+
+    if (m_renderUndo) { m_view->display(); }
 }
 bool RemoveLinesVisualModeCommand::execute()
 {
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
-    m_initialX = cursorPos.second;
-    m_initialY = cursorPos.first;
+    m_cursorX = cursorPos.second;
+    m_cursorY = cursorPos.first;
     const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+    m_previousVisualX = previousVisualPos.second;
+    m_previousVisualY = previousVisualPos.first;
 
-    m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
-    m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+    m_lowerBoundY = std::min(m_cursorY, m_previousVisualY);
+    m_upperBoundY = std::max(m_cursorY, m_previousVisualY);
 
-    m_lowerBoundX = std::min(cursorPos.second, previousVisualPos.second);
-    m_upperBoundX = std::max(cursorPos.second, previousVisualPos.second);
-
-    bool isWithinXBounds = (column >= lowerBoundX && column <= upperBoundX);
+    m_lowerBoundX = std::min(m_cursorX, m_previousVisualX);
+    m_upperBoundX = std::max(m_cursorX, m_previousVisualX);
 
     int differenceY = m_upperBoundY - m_lowerBoundY;
 
-    if (differenceY == 0)
-    {
+    m_intermediaryLines.reserve(differenceY);
 
-    }
+    m_buffer->moveCursor(m_lowerBoundY, 0);
 
     for (int i = m_lowerBoundY; i <= m_upperBoundY; i++)
     {
-        // Remove the characters/lines
+        if (i == m_lowerBoundY)
+        {
+            if (m_lowerBoundY == m_upperBoundY)
+            {
+                removeCharactersInRangeAndInsertIntoVector(m_lowerBoundCharacters, m_lowerBoundX, m_upperBoundX + 1, m_lowerBoundY);
+            }
+            else if (m_lowerBoundY < m_cursorY)
+            {
+                removeCharactersInRangeAndInsertIntoVector(m_lowerBoundCharacters, m_previousVisualX, m_buffer->getLineGapBuffer(m_lowerBoundY)->lineSize(), m_lowerBoundY);
+            }
+            else
+            {
+                removeCharactersInRangeAndInsertIntoVector(m_lowerBoundCharacters, m_cursorX, m_buffer->getLineGapBuffer(m_lowerBoundY)->lineSize(), m_lowerBoundY);
+            }
+        }
+        else
+        {
+            m_buffer->moveCursor(m_lowerBoundY + 1, 0);
+            m_intermediaryLines.push_back(m_buffer->removeLine());
+        }
     }
 
-
-    m_lines.reserve(m_upperBoundY - m_lowerBoundY);
-
-    for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
+    // Append everything after the cursor on the last line to the first line
+    if (differenceY > 0)
     {
-        m_lines.push_back(m_buffer->removeLine());
+        const std::shared_ptr<LineGapBuffer>& lastLine = m_intermediaryLines[m_intermediaryLines.size() - 1];
+
+        if (m_lowerBoundY == m_cursorY)
+        {
+            m_buffer->moveCursor(m_lowerBoundY, m_cursorX);
+
+            for (size_t i = m_previousVisualX + 1; i < lastLine->lineSize(); i++)
+            {
+                m_buffer->insertCharacter(lastLine->at(i));
+            }
+        }
+        else
+        {
+            m_buffer->moveCursor(m_lowerBoundY, m_previousVisualX);
+
+            for (size_t i = m_cursorX + 1; i < lastLine->lineSize(); i++)
+            {
+                m_buffer->insertCharacter(lastLine->at(i));
+            }
+        }
     }
 
-    m_buffer->moveCursor(m_lowerBoundY, m_initialX);
+    m_buffer->moveCursor(m_lowerBoundY, m_upperBoundX);
+    m_buffer->shiftCursorX(0);
+
+    m_editor->setMode(NORMAL_MODE);
+
+    if (m_renderExecute) { m_view->display(); }
+
+    return true;
+}
+
+void RemoveLinesVisualBlockModeCommand::redo()
+{
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+    if (m_renderExecute) { m_view->display(); }
+}
+void RemoveLinesVisualBlockModeCommand::undo()
+{
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+
+    if (m_renderUndo) { m_view->display(); }
+}
+bool RemoveLinesVisualBlockModeCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_cursorX = cursorPos.second;
+    m_cursorY = cursorPos.first;
+    const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+    m_previousVisualX = previousVisualPos.second;
+    m_previousVisualY = previousVisualPos.first;
+
+    m_lowerBoundY = std::min(m_cursorY, m_previousVisualY);
+    m_upperBoundY = std::max(m_cursorY, m_previousVisualY);
+
+    m_lowerBoundX = std::min(m_cursorX, m_previousVisualX);
+    m_upperBoundX = std::max(m_cursorX, m_previousVisualX);
+
+    int differenceY = m_upperBoundY - m_lowerBoundY;
+
+    m_lines.reserve(differenceY + 1);
+
+    m_buffer->moveCursor(m_lowerBoundY, 0);
+
+
+    for (int row = m_lowerBoundY; row <= m_upperBoundY; row++)
+    {
+        const std::shared_ptr<LineGapBuffer>& line = m_buffer->getLineGapBuffer(row);
+        int lineSize = static_cast<int>(line->lineSize());
+
+    }
+
+
+    m_buffer->moveCursor(m_lowerBoundY, m_upperBoundX);
+    m_buffer->shiftCursorX(0);
 
     m_editor->setMode(NORMAL_MODE);
 
