@@ -5,6 +5,62 @@
 #include "InputController.h"
 #include "LineGapBuffer.h"
 
+bool Command::isValidLeftPair(char leftPair) const
+{
+    if (leftPair == '(' || leftPair == '{' || leftPair == '[' || leftPair == '\'' || leftPair == '"')
+    {
+        return true;
+    }
+    else { return false; }
+}
+
+char Command::leftPairToRightPair(char leftPair) const
+{
+    switch (leftPair)
+    {
+        case '(':
+            return ')';
+        case '{':
+            return '}';
+        case '[':
+            return ']';
+        case '"':
+            return '"';
+        case '\'':
+            return '\'';
+        default:
+            endwin();
+            std::cerr << "Non-valid leftPair: " << leftPair <<'\n';
+            exit(1);
+    }
+}
+
+bool Command::isMatchingPair(char leftPair, char rightPair) const
+{
+    switch (leftPair)
+    {
+        case '(':
+            if (rightPair == ')') { return true; }
+            break;
+        case '{':
+            if (rightPair == '}') { return true; }
+            break;
+        case '[':
+            if (rightPair == ']') { return true; }
+            break;
+        case '"':
+            if (rightPair == '"') { return true; }
+            break;
+        case '\'':
+            if (rightPair == '\'') { return true; }
+            break;
+        default:
+            return false;
+    }
+
+    return false;
+}
+
 int Command::tabLine(const std::shared_ptr<LineGapBuffer>& line, bool headingRight, int cursorY, int rightwardOffset)
 {
     if (headingRight)
@@ -373,6 +429,12 @@ void RemoveCharacterInsertCommand::redo()
                 m_buffer->removeCharacter(true);
             }
         }
+        else if (m_autoDeletedPair)
+        {
+            m_buffer->removeCharacter(false);
+            m_buffer->moveCursor(m_y, m_x - 1);
+            m_buffer->shiftCursorX(0);
+        }
 
         if (m_renderExecute) { m_view->display(); }
     }
@@ -414,6 +476,7 @@ void RemoveCharacterInsertCommand::undo()
         }
 
         if (!m_deletedWhitespaces) { m_buffer->insertCharacter(m_character); m_buffer->shiftCursorX(0); }
+        if (m_autoDeletedPair) { m_buffer->insertCharacter(leftPairToRightPair(m_character)); m_buffer->moveCursor(m_y, m_x); }
 
         if (m_renderUndo) { m_view->display(); }
     }
@@ -450,11 +513,12 @@ bool RemoveCharacterInsertCommand::execute()
     {
         m_character = m_buffer->removeCharacter(true);
 
+        const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
+
+        // Auto delete spaces
         if (m_character == ' ')
         {
             m_deletedWhitespaces++;
-
-            const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
 
             for (int i = 1; i < WHITESPACE_PER_TAB; i++)
             {
@@ -465,6 +529,22 @@ bool RemoveCharacterInsertCommand::execute()
                     m_character = m_buffer->removeCharacter(true);
                 }
                 else { break; }
+            }
+        }
+        // AUTO REMOVE PAIRS
+        else if (isValidLeftPair(m_character))
+        {
+            int index = std::min(static_cast<int>(lineGapBuffer->lineSize()) - 1, m_x - 1);
+
+            char nextChar = lineGapBuffer->at(index);
+
+            if (isMatchingPair(m_character, nextChar))
+            {
+                m_autoDeletedPair = true;
+
+                m_buffer->removeCharacter(false);
+
+                m_buffer->moveCursor(m_y, m_x - 1);
             }
         }
 
@@ -613,39 +693,49 @@ bool InsertLineNormalCommand::execute()
 
 void InsertLineInsertCommand::redo()
 {
-    m_buffer->moveCursor(m_y, 0);
-    for (int i = 0; i < m_deletedSpaces; i++)
+    removeCharactersInRange(0, m_deletedSpaces, m_y);
+
+    removeCharactersInRange(m_x, m_x + m_distanceToEndLine, m_y);
+
+    if (m_insidePair)
     {
-        m_buffer->removeCharacter(false);
-    }
+        m_buffer->insertLine(true);
 
-    m_buffer->moveCursor(m_y, m_x);
+        for (int i = 0; i < m_xPositionOfFirstCharacter + WHITESPACE_PER_TAB; i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
 
-    for (size_t i = 0; i < m_distanceToEndLine; i++)
-    {
-        m_buffer->removeCharacter(false);
-    }
+        m_buffer->insertLine(true);
 
-    m_buffer->insertLine(true);
+        for (int i = 0; i < m_xPositionOfFirstCharacter; i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
 
-    for (int i = 0; i < m_xPositionOfFirstCharacter; i++)
-    {
-        m_buffer->insertCharacter(' ');
-    }
+        insertCharactersInRangeFromVector(m_characters, m_xPositionOfFirstCharacter, m_xPositionOfFirstCharacter + m_distanceToEndLine, m_y + 2);
 
-    for (size_t i = 0; i < m_distanceToEndLine; i++)
-    {
-        m_buffer->insertCharacter(m_characters[i]);
-
-    }
-
-    if (m_deletedSpaces)
-    {
-        m_buffer->moveCursor(m_y + 1, m_x - 1);
+        m_buffer->moveCursor(m_y + 1, m_xPositionOfFirstCharacter + WHITESPACE_PER_TAB);
     }
     else
     {
-        m_buffer->shiftCursorFullLeft();
+        m_buffer->insertLine(true);
+
+        for (int i = 0; i < m_xPositionOfFirstCharacter; i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+
+        insertCharactersInRangeFromVector(m_characters, m_xPositionOfFirstCharacter, m_xPositionOfFirstCharacter + m_distanceToEndLine, m_y + 1);
+
+        if (m_deletedSpaces)
+        {
+            m_buffer->moveCursor(m_y + 1, m_x - 1);
+        }
+        else
+        {
+            m_buffer->shiftCursorFullLeft();
+        }
     }
 
     if (m_renderExecute) { m_view->display(); }
@@ -655,6 +745,7 @@ void InsertLineInsertCommand::undo()
     m_buffer->moveCursor(m_y + 1, 0);
 
     m_buffer->removeLine();
+    if (m_insidePair) { m_buffer->removeLine(); }
 
     m_buffer->moveCursor(m_y, m_x);
 
@@ -689,6 +780,11 @@ bool InsertLineInsertCommand::execute()
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_buffer->getLineGapBuffer(m_y);
     int lineSize = static_cast<int>(lineGapBuffer->lineSize());
 
+    if (m_x > 0 && m_x <= lineSize - 1)
+    {
+        m_insidePair = isMatchingPair(lineGapBuffer->at(m_x - 1), lineGapBuffer->at(m_x));
+    }
+
     if (lineSize)
     {
         bool lineIsAllSpaces = true;
@@ -700,7 +796,6 @@ bool InsertLineInsertCommand::execute()
                 break;
             }
         }
-
         if (lineIsAllSpaces)
         {
             m_buffer->moveCursor(m_y, 0);
@@ -712,19 +807,41 @@ bool InsertLineInsertCommand::execute()
         }
     }
 
-
     removeCharactersInRangeAndInsertIntoVector(m_characters, m_x, lineSize, m_y);
 
-    m_buffer->insertLine(true);
-
-    for (int i = 0; i < m_xPositionOfFirstCharacter; i++)
+    if (m_insidePair)
     {
-        m_buffer->insertCharacter(' ');
+        m_buffer->insertLine(true);
+
+        for (int i = 0; i < m_xPositionOfFirstCharacter + WHITESPACE_PER_TAB; i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+
+        m_buffer->insertLine(true);
+
+        for (int i = 0; i < m_xPositionOfFirstCharacter; i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
+
+        insertCharactersInRangeFromVector(m_characters, m_x, lineSize, m_y + 2);
+
+        m_buffer->moveCursor(m_y + 1, m_xPositionOfFirstCharacter + WHITESPACE_PER_TAB);
     }
+    else
+    {
+        m_buffer->insertLine(true);
 
-    insertCharactersInRangeFromVector(m_characters, m_x, lineSize, m_y + 1);
+        for (int i = 0; i < m_xPositionOfFirstCharacter; i++)
+        {
+            m_buffer->insertCharacter(' ');
+        }
 
-    m_buffer->moveCursor(m_y + 1, m_xPositionOfFirstCharacter);
+        insertCharactersInRangeFromVector(m_characters, m_x, lineSize, m_y + 1);
+
+        m_buffer->moveCursor(m_y + 1, m_xPositionOfFirstCharacter);
+    }
 
     if (m_renderExecute) { m_view->display(); }
 
@@ -1405,11 +1522,35 @@ bool TabLineVisualCommand::execute()
 
 void AutocompletePair::redo()
 {
+    m_buffer->moveCursor(m_y, m_x);
+
+    m_buffer->insertCharacter(m_leftPair);
+
+    if (m_autocomplete)
+    {
+        m_buffer->insertCharacter(m_rightPair);
+        m_buffer->shiftCursorX(-1);
+    }
+
+    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->shiftCursorX(0);
 
     if (m_renderExecute) { m_view->display(); }
 }
 void AutocompletePair::undo()
 {
+    m_buffer->moveCursor(m_y, m_x);
+
+    m_buffer->removeCharacter(false);
+
+    if (m_autocomplete)
+    {
+        m_buffer->removeCharacter(false);
+    }
+
+    m_buffer->moveCursor(m_y, m_x);
+    m_buffer->shiftCursorX(0);
+
     if (m_renderUndo) { m_view->display(); }
 }
 bool AutocompletePair::execute()
@@ -1417,8 +1558,6 @@ bool AutocompletePair::execute()
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_x = cursorPos.second;
     m_y = cursorPos.first;
-
-    bool autocomplete = true;
 
     switch (m_leftPair)
     {
@@ -1430,7 +1569,7 @@ bool AutocompletePair::execute()
             break;
         case '\'':
             m_rightPair = '\'';
-            if (m_x != 0 && m_buffer->getLineGapBuffer(m_y)->at(m_x - 1) != ' ') { autocomplete = false; }
+            if (m_x != 0 && m_buffer->getLineGapBuffer(m_y)->at(m_x - 1) != ' ') { m_autocomplete = false; }
             break;
         case '[':
             m_rightPair = ']';
@@ -1446,7 +1585,7 @@ bool AutocompletePair::execute()
 
     m_buffer->insertCharacter(m_leftPair);
 
-    if (autocomplete)
+    if (m_autocomplete)
     {
         m_buffer->insertCharacter(m_rightPair);
         m_buffer->shiftCursorX(-1);

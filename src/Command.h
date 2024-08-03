@@ -29,6 +29,12 @@ protected:
     int getXCoordinateFromJumpCode(int jumpCode) const;
     // Tabs a line left or right, returns the directional-displacement in characters
     int tabLine(const std::shared_ptr<LineGapBuffer>& line, bool headingRight, int cursorY, int rightwardOffset = WHITESPACE_PER_TAB);
+    // Determins if two characters match as a pair, ex: '(' and ')' returns true. 'a' and 'b' returns false
+    bool isMatchingPair(char leftPair, char rightPair) const;
+    // Returns true if left pair is a valid pair starter. '(' returns treu, 'a' returns false
+    bool isValidLeftPair(char character) const;
+    // Returns the rightPair component of a given left pair
+    char leftPairToRightPair(char leftPair) const;
 
 
 public:
@@ -193,6 +199,8 @@ private:
     std::shared_ptr<LineGapBuffer> m_line = nullptr;
     int m_deletedWhitespaces = 0;
 
+    bool m_autoDeletedPair = false;
+
     void redo() override;
     void undo() override;
     bool execute() override;
@@ -248,6 +256,8 @@ private:
     std::vector<char> m_characters;
     size_t m_distanceToEndLine;
     int m_xPositionOfFirstCharacter;
+
+    bool m_insidePair = false;
 
     void redo() override;
     void undo() override;
@@ -491,6 +501,8 @@ private:
 
     char m_leftPair;
     char m_rightPair;
+
+    bool m_autocomplete = true;
 
     void redo() override;
     void undo() override;
