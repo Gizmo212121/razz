@@ -203,7 +203,7 @@ int Buffer::findCharacterIndex(char character, bool findForwards)
     }
     else
     {
-        for (size_t i = m_cursorX - 1; i > 0; i--)
+        for (int i = m_cursorX - 1; i > 0; i--)
         {
             if (lineGapBuffer->at(i) == character)
             {

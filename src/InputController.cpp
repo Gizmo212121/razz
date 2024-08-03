@@ -176,6 +176,9 @@ void InputController::handleNormalModeInput(int input)
         case SEMICOLON:
             m_editor->commandQueue().execute<FindCharacterCommand>(false, repetitionCount(), m_findCharacter, m_searchedForward);
             break;
+        case COMMA:
+            m_editor->commandQueue().execute<FindCharacterCommand>(false, repetitionCount(), m_findCharacter, !m_searchedForward);
+            break;
         case w:
             m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
             break;
@@ -365,6 +368,21 @@ void InputController::handleInsertModeInput(int input)
             break;
         case TAB:
             m_editor->commandQueue().execute<TabCommand>(true, 1);
+            break;
+        case LEFT_PARENTHESIS:
+            m_editor->commandQueue().execute<AutocompletePair>(true, 1, '(');
+            break;
+        case LEFT_BRACKET:
+            m_editor->commandQueue().execute<AutocompletePair>(true, 1, '[');
+            break;
+        case LEFT_BRACE:
+            m_editor->commandQueue().execute<AutocompletePair>(true, 1, '{');
+            break;
+        case APOSTROPHE:
+            m_editor->commandQueue().execute<AutocompletePair>(true, 1, '\'');
+            break;
+        case QUOTE:
+            m_editor->commandQueue().execute<AutocompletePair>(true, 1, '"');
             break;
         case CTRL_W:
         {
@@ -612,6 +630,9 @@ void InputController::handleDeleteToInsertCommands(int input)
 
     switch (input)
     {
+        case c:
+            m_editor->commandQueue().execute<RemoveLineToInsertCommand>(false, 1);
+            break;
         case w:
             m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD);
             m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
@@ -720,17 +741,21 @@ void InputController::handleVisualModes(int input)
             m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
             break;
         case d:
-            if (currentMode == VISUAL_LINE_MODE)
+            switch (currentMode)
             {
-                m_editor->commandQueue().execute<RemoveLinesVisualLineModeCommand>(false, 1);
-            }
-            else if (currentMode == VISUAL_MODE)
-            {
-                m_editor->commandQueue().execute<RemoveLinesVisualModeCommand>(false, 1);
-            }
-            else
-            {
-
+                case VISUAL_LINE_MODE:
+                    m_editor->commandQueue().execute<RemoveLinesVisualLineModeCommand>(false, 1);
+                    break;
+                case VISUAL_MODE:
+                    m_editor->commandQueue().execute<RemoveLinesVisualModeCommand>(false, 1);
+                    break;
+                case VISUAL_BLOCK_MODE:
+                    m_editor->commandQueue().execute<RemoveLinesVisualBlockModeCommand>(false, 1);
+                    break;
+                default:
+                    endwin();
+                    std::cerr << "Unexpected mode: " << currentMode << '\n';
+                    exit(1);
             }
             break;
         case LESS_THAN_SIGN:

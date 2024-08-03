@@ -275,6 +275,24 @@ public:
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
 };
 
+class RemoveLineToInsertCommand : public Command
+{
+private:
+    std::vector<char> m_characters;
+
+    int m_x = 0;
+    int m_y = 0;
+
+    int m_indexOfFirstNonSpaceCharacter = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+public:
+    RemoveLineToInsertCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
 class TabCommand : public Command
 {
 private:
@@ -463,4 +481,22 @@ private:
 public:
     TabLineVisualCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool headingRight)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_headingRight(headingRight) {}
+};
+
+class AutocompletePair : public Command
+{
+private:
+    int m_y = 0;
+    int m_x = 0;
+
+    char m_leftPair;
+    char m_rightPair;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    AutocompletePair(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, char leftPair)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_leftPair(leftPair) {}
 };
