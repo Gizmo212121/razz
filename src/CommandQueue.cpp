@@ -6,16 +6,14 @@ void CommandQueue::undo()
 {
     try
     {
-        if (m_currentCommandCount <= 0)
+        if (m_currentCommandCount <= 2) // Temp fix here for the bullshit error happening with character-deleting in a new buffer.
         {
             // std::cout << "Already at oldest change!\n";
+            // TODO: Send signal to command buffer. Maybe have this function return a bool to say if it worked or not? Then we can contextualize the return statement, giving a proper warning
             return;
         }
 
         size_t repetitionNumber = m_commandRepetitions[m_currentCommandCount - 1];
-
-        // std::cout << "REP NUM: " << repetitionNumber << '\n';
-        // std::cout << "INSIDE WHILE: " << m_commandRepetitions[m_currentCommandCount - 1] << '\n';
 
         while (m_currentCommandCount > 0 && m_commandRepetitions[m_currentCommandCount - 1] == repetitionNumber)
         {
@@ -35,33 +33,27 @@ void CommandQueue::undo()
                 std::cerr << "Error: m_currentCommandCount (" << m_currentCommandCount << ") exceeds m_commands size (" << m_commands.size() << ").\n";
             }
 
-            // std::cout << "BOZO2\n";
-
             m_undoesSinceChange++;
-            // std::cout << "BOZO3\n";
+
             m_currentCommandCount--;
-            // std::cout << "BOZO4\n";
         }
     }
     catch (const std::out_of_range& e)
     {
+        endwin();
         std::cerr << "Out of range error: " << e.what() << '\n';
+        exit(1);
     }
     catch (const std::exception& e)
     {
+        endwin();
         std::cerr << "Exception: " << e.what() << '\n';
+        exit(1);
     }
-
-    // std::cout << "Current command count: " << m_currentCommandCount << '\n';
-    // std::cout << "SIZE OF DEQUE: " << m_commands.size() << '\n';
 }
 
 void CommandQueue::redo()
 {
-    // std::cout << "BEFORE REDO: \n\t UNDOS: " << m_undoesSinceChange << '\n';
-    // std::cout << "Current command count: " << m_currentCommandCount << '\n';
-    // std::cout << "SIZE OF DEQUE: " << m_commands.size() << '\n';
-
     if (m_undoesSinceChange > 0)
     {
         size_t repetitionNumber = m_commandRepetitions[m_currentCommandCount];
@@ -75,6 +67,7 @@ void CommandQueue::redo()
     else
     {
         // std::cout << "Already at newest change!\n";
+        // TODO: Same thing here
     }
 }
 

@@ -8,7 +8,6 @@
 View::View(Editor* editor, Buffer* buffer)
     : m_editor(editor), m_buffer(buffer)
 {
-    display();
 }
 
 void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold)

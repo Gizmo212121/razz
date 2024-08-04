@@ -1,7 +1,9 @@
 #include "CircularBuffer.h"
 
 CircularBuffer::CircularBuffer(size_t maxSize)
-    : m_maxSize(maxSize) {}
+    : m_maxSize(maxSize), m_buffer()
+{
+}
 
 void CircularBuffer::add(int x)
 {

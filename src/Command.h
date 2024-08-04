@@ -512,3 +512,29 @@ public:
     AutocompletePair(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, char leftPair)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_leftPair(leftPair) {}
 };
+
+class PasteCommand : public Command
+{
+private:
+    int m_cursorX = 0;
+    int m_cursorY = 0;
+
+    int m_previousVisualX = 0;
+    int m_previousVisualY = 0;
+
+    int m_lowerBoundY = 0;
+    int m_upperBoundY = 0;
+
+    int m_lowerBoundX = 0;
+    int m_upperBoundX = 0;
+
+    std::vector<std::vector<char>> m_lines;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    PasteCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};

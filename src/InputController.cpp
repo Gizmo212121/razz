@@ -206,6 +206,9 @@ void InputController::handleNormalModeInput(int input)
         case c:
             m_commandBuffer.push_back('c');
             break;
+        case k:
+            m_editor->commandQueue().execute<PasteCommand>(false, repetitionCount());
+            break;
         case LESS_THAN_SIGN:
         {
             int repetition = repetitionCount();
@@ -578,6 +581,8 @@ void InputController::handleDeleteCommands(int input)
         {
             int modifiedRep = std::min(rep + 1, numberOfLines);
 
+            if (m_editor->buffer().getCursorPos().first == numberOfLines - 1) { break; }
+
             m_editor->commandQueue().execute<RemoveLineCommand>(false, modifiedRep);
             break;
         }
@@ -585,13 +590,18 @@ void InputController::handleDeleteCommands(int input)
         {
             int modifiedrep = std::min(rep + 1, numberOfLines);
 
-            bool onLastLine = (m_editor->buffer().getCursorPos().first == numberOfLines - 1);
+            const std::pair<int, int>& cursorPos = m_editor->buffer().getCursorPos();
+
+            if (cursorPos.first == 0) { break; }
+
+            bool onLastLine = (cursorPos.first == numberOfLines - 1);
 
             for (int i = 0; i < modifiedrep; i++)
             {
+                if (!onLastLine && i > 0) { m_editor->buffer().shiftCursorY(-1); }
                 m_editor->commandQueue().execute<RemoveLineCommand>(true, 1);
-                if (!onLastLine) { m_editor->buffer().shiftCursorY(-1); }
             }
+
             break;
         }
         default:

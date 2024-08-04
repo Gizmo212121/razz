@@ -1136,9 +1136,13 @@ bool RemoveLinesVisualLineModeCommand::execute()
 
     m_lines.reserve(m_upperBoundY - m_lowerBoundY);
 
+    m_editor->clipBoard().clear();
+
     for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
     {
         m_lines.push_back(m_buffer->removeLine());
+
+        m_editor->clipBoard().add(m_lines[i]);
     }
 
     m_buffer->moveCursor(m_lowerBoundY, m_initialX);
@@ -1589,6 +1593,34 @@ bool AutocompletePair::execute()
     {
         m_buffer->insertCharacter(m_rightPair);
         m_buffer->shiftCursorX(-1);
+    }
+
+    if (m_renderExecute) { m_view->display(); }
+
+    return true;
+}
+
+void PasteCommand::redo()
+{
+
+}
+void PasteCommand::undo()
+{
+
+}
+bool PasteCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_cursorX = cursorPos.second;
+    m_cursorY = cursorPos.first;
+    const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+
+    m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
+    m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+
+    for (size_t i = 0; i < m_editor->clipBoard().numberOfLines(); i++)
+    {
+        m_buffer->insertLine(std::make_shared<LineGapBuffer>(m_editor->clipBoard()[i]), true);
     }
 
     if (m_renderExecute) { m_view->display(); }

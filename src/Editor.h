@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "InputController.h"
 #include "View.h"
+#include "Clipboard.h"
 
 class Editor
 {
@@ -12,11 +13,12 @@ private:
 
     bool m_running = true;
 
-    CommandQueue m_commandQueue;
-    Buffer m_buffer;
-    InputController m_inputController;
-    View m_view;
     MODE m_currentMode;
+    Buffer m_buffer;
+    View m_view;
+    CommandQueue m_commandQueue;
+    InputController m_inputController;
+    Clipboard m_clipBoard;
 
 private:
 
@@ -39,5 +41,6 @@ public:
     const InputController& inputController() { return m_inputController; }
     View& view() { return m_view; }
     MODE mode() const { return m_currentMode ; }
+    Clipboard& clipBoard() { return m_clipBoard; }
 
 };
