@@ -522,11 +522,10 @@ private:
     int m_previousVisualX = 0;
     int m_previousVisualY = 0;
 
-    int m_lowerBoundY = 0;
-    int m_upperBoundY = 0;
-
     int m_lowerBoundX = 0;
     int m_upperBoundX = 0;
+
+    bool m_insertingOnOnlyEmptyLine = false;
 
     std::vector<std::vector<char>> m_lines;
 

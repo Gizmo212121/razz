@@ -1,5 +1,6 @@
 #include "Command.h"
 #include "Buffer.h"
+#include "Clipboard.h"
 #include "Editor.h"
 #include "Includes.h"
 #include "InputController.h"
@@ -65,6 +66,8 @@ int Command::tabLine(const std::shared_ptr<LineGapBuffer>& line, bool headingRig
 {
     if (headingRight)
     {
+        if (line->lineSize() == 0) { return 0; }
+
         m_buffer->moveCursor(cursorY, 0);
 
         for (int i = 0; i < abs(rightwardOffset); i++)
@@ -882,6 +885,11 @@ bool RemoveLineCommand::execute()
     else if (m_buffer->getFileGapBuffer().numberOfLines() == 1) { m_deletedOnlyLine = true; }
 
     m_line = m_buffer->removeLine();
+
+    Clipboard& clipBoard = m_editor->clipBoard();
+    clipBoard.lineUpdate();
+    clipBoard.add(m_line);
+
     m_buffer->shiftCursorX(0);
 
     if (m_renderExecute) { m_view->display(); }
@@ -927,6 +935,10 @@ bool RemoveLineToInsertCommand::execute()
     int lineSize = static_cast<int>(line->lineSize());
 
     if (lineSize == 0) { return false; }
+
+    Clipboard& clipBoard = m_editor->clipBoard();
+    clipBoard.blockUpdate(0, lineSize - 1);
+    clipBoard.add(line);
 
     m_indexOfFirstNonSpaceCharacter = m_buffer->indexOfFirstNonSpaceCharacter(line);
 
@@ -1136,7 +1148,7 @@ bool RemoveLinesVisualLineModeCommand::execute()
 
     m_lines.reserve(m_upperBoundY - m_lowerBoundY);
 
-    m_editor->clipBoard().clear();
+    m_editor->clipBoard().lineUpdate();
 
     for (int i = 0; i <= m_upperBoundY - m_lowerBoundY; i++)
     {
@@ -1264,6 +1276,8 @@ void RemoveLinesVisualModeCommand::undo()
 }
 bool RemoveLinesVisualModeCommand::execute()
 {
+    Clipboard& clipBoard = m_editor->clipBoard();
+
     const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
     m_cursorX = cursorPos.second;
     m_cursorY = cursorPos.first;
@@ -1280,6 +1294,14 @@ bool RemoveLinesVisualModeCommand::execute()
     int differenceY = m_upperBoundY - m_lowerBoundY;
 
     m_intermediaryLines.reserve(differenceY);
+
+
+    clipBoard.visualUpdate(m_previousVisualX, m_cursorX, m_cursorY - m_previousVisualY);
+    for (int i = m_lowerBoundY; i <= m_upperBoundY; i++)
+    {
+        clipBoard.add(m_buffer->getLineGapBuffer(i));
+    }
+
 
     m_buffer->moveCursor(m_lowerBoundY, 0);
 
@@ -1332,7 +1354,18 @@ bool RemoveLinesVisualModeCommand::execute()
         }
     }
 
-    m_buffer->moveCursor(m_lowerBoundY, m_upperBoundX);
+    if (m_previousVisualY == m_cursorY)
+    {
+        m_buffer->moveCursor(m_lowerBoundY, m_lowerBoundX);
+    }
+    else if (m_previousVisualY > m_cursorY)
+    {
+        m_buffer->moveCursor(m_lowerBoundY, m_cursorX);
+    }
+    else
+    {
+        m_buffer->moveCursor(m_lowerBoundY, m_previousVisualX);
+    }
     m_buffer->shiftCursorX(0);
 
     m_editor->setMode(NORMAL_MODE);
@@ -1606,7 +1639,11 @@ void PasteCommand::redo()
 }
 void PasteCommand::undo()
 {
+    m_buffer->moveCursor(m_cursorY, m_cursorX);
 
+
+
+    if (m_renderUndo) { m_view->display(); }
 }
 bool PasteCommand::execute()
 {
@@ -1615,13 +1652,130 @@ bool PasteCommand::execute()
     m_cursorY = cursorPos.first;
     const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
 
-    m_lowerBoundY = std::min(cursorPos.first, previousVisualPos.first);
-    m_upperBoundY = std::max(cursorPos.first, previousVisualPos.first);
+    size_t numberOfLines = m_buffer->getFileGapBuffer().numberOfLines();
 
-    for (size_t i = 0; i < m_editor->clipBoard().numberOfLines(); i++)
+    const Clipboard& clipBoard = m_editor->clipBoard();
+    YANK_TYPE yankType = clipBoard.yankType();
+    size_t clipBoardNumberOfLines = m_editor->clipBoard().numberOfLines();
+
+    if (yankType == LINE_YANK)
     {
-        m_buffer->insertLine(std::make_shared<LineGapBuffer>(m_editor->clipBoard()[i]), true);
+        const std::shared_ptr<LineGapBuffer>& firstBufferLine = m_editor->buffer().getLineGapBuffer(0);
+
+        // If there's only one line and it's empty, we don't want to append anything, just insert characters onto the first line.
+        if (numberOfLines == 1 && firstBufferLine->lineSize() == 0)
+        {
+            m_insertingOnOnlyEmptyLine = true; 
+
+            const LineGapBuffer& firstClipboardLine = clipBoard[0];
+
+            // Insert characters from first clipboard line in-place onto the first buffer line
+            for (size_t charIndex = 0; charIndex < firstClipboardLine.lineSize(); charIndex++)
+            {
+                m_buffer->insertCharacter(firstClipboardLine[charIndex]);
+            }
+
+            // Append the additional lines
+            for (size_t i = 0; i < clipBoardNumberOfLines - 1; i++)
+            {
+                m_buffer->insertLine(std::make_shared<LineGapBuffer>(clipBoard[i]), true);
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < clipBoardNumberOfLines; i++)
+            {
+                m_buffer->insertLine(std::make_shared<LineGapBuffer>(clipBoard[i]), true);
+            }
+        }
     }
+    else if (yankType == VISUAL_YANK)
+    {
+        m_editor->buffer().moveCursor(m_cursorY, m_cursorX + 1);
+
+        const LineGapBuffer& firstClipboardLine = clipBoard[0];
+        const LineGapBuffer& lastClipboardLine = clipBoard[clipBoardNumberOfLines - 1];
+
+        size_t initialX = static_cast<int>(clipBoard.initialX());
+        size_t finalX = static_cast<int>(clipBoard.finalX());
+
+        m_lowerBoundX = std::min(initialX, finalX);
+        m_upperBoundX = std::max(initialX, finalX);
+
+        int boundDifferenceY = clipBoard.boundDifferenceY();
+
+        std::vector<char> restOfLineAfterCursor;
+
+        const std::shared_ptr<LineGapBuffer>& firstBufferLine = m_buffer->getLineGapBuffer(m_cursorY);
+
+        // Insert characters from first clipboard line in-place onto the first buffer line
+        if (boundDifferenceY == 0)
+        {
+            for (size_t charIndex = m_lowerBoundX; charIndex <= m_upperBoundX; charIndex++)
+            {
+                m_buffer->insertCharacter(firstClipboardLine[charIndex]);
+            }
+        }
+        else if (boundDifferenceY < 0)
+        {
+            for (size_t charIndex = finalX; charIndex < firstClipboardLine.lineSize(); charIndex++)
+            {
+                m_buffer->insertCharacter(firstClipboardLine[charIndex]);
+            }
+        }
+        else
+        {
+            size_t initialBufferLineSize = firstBufferLine->lineSize();
+
+            // Insert characters in the first clipboard line after initialX onto the first buffer line
+            for (size_t charIndex = initialX; charIndex < firstClipboardLine.lineSize(); charIndex++)
+            {
+                m_buffer->insertCharacter(firstClipboardLine[charIndex]);
+            }
+
+            // Then remove all the characters that were pushed to the right; these will be appended to the last line later
+            int start = firstClipboardLine.lineSize() - initialX + m_cursorX + 1;
+            int end = initialBufferLineSize + firstClipboardLine.lineSize() - initialX;
+            if (end - start >= 0)
+            {
+                removeCharactersInRangeAndInsertIntoVector(restOfLineAfterCursor, start, end, m_cursorY);
+            }
+        }
+
+        // Insert the intermediary lines
+        for (size_t i = 1; i < clipBoardNumberOfLines; i++)
+        {
+            m_buffer->insertLine(std::make_shared<LineGapBuffer>(clipBoard[i]), true);
+        }
+
+        // Insert characters from last clipboard line in-place onto the beginning of the first buffer line
+        if (boundDifferenceY < 0)
+        {
+            // m_buffer->shiftCursorFullLeft();
+            // for (size_t charIndex = 0; charIndex < initialX; charIndex++)
+            // {
+            //     m_buffer->insertCharacter(lastClipboardLine[charIndex]);
+            // }
+        }
+        else if (boundDifferenceY > 0)
+        {
+            for (size_t charIndex = 0; charIndex < finalX; charIndex++)
+            {
+                m_buffer->insertCharacter(lastClipboardLine[charIndex]);
+            }
+
+            int insertEnd = finalX + restOfLineAfterCursor.size() + 1;
+            insertCharactersInRangeFromVector(restOfLineAfterCursor, finalX + 1, insertEnd, m_cursorY + boundDifferenceY);
+
+            removeCharactersInRange(insertEnd, m_editor->buffer().getLineGapBuffer(m_cursorY + boundDifferenceY)->lineSize(), m_cursorY + boundDifferenceY);
+        }
+    }
+    else // Block yank
+    {
+        // All characters are inserted in-place onto preexisting lines
+    }
+
+    m_buffer->shiftCursorX(0);
 
     if (m_renderExecute) { m_view->display(); }
 

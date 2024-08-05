@@ -8,17 +8,30 @@ class Clipboard
 
 private:
 
+    YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
+
     size_t m_numberOfLines = 0;
     std::vector<LineGapBuffer> m_fullLines;
+
+    int m_initialX = 0;
+    int m_finalX = 0;
+    int m_differenceBoundsY = 0;
 
 public:
 
     void add(const std::shared_ptr<LineGapBuffer>& line);
 
-    void clear() { m_numberOfLines = 0; }
+    void lineUpdate();
+    // Lower and upper bounds should be inclusive
+    void visualUpdate(const int initialX, const int finalX, const int boundDifferenceY);
+    void blockUpdate(const int initialX, const int finalX);
 
     // Getters
     size_t numberOfLines() const { return m_numberOfLines; }
-    const LineGapBuffer& operator [] (size_t index) const { return m_fullLines[index]; }
+    const LineGapBuffer& operator [] (size_t index) const;
+    YANK_TYPE yankType() const { return m_yankType; }
+    int initialX() const { return m_initialX; }
+    int finalX() const { return m_finalX; }
+    int boundDifferenceY() const { return m_differenceBoundsY; }
 
 };

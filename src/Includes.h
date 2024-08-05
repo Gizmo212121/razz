@@ -30,6 +30,13 @@ enum MODE
 
 const int WHITESPACE_PER_TAB = 4;
 
+enum YANK_TYPE
+{
+    LINE_YANK,
+    BLOCK_YANK,
+    VISUAL_YANK,
+};
+
 enum CUSTOM_COLORS
 {
     GREY = 8,
