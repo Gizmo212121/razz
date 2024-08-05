@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Includes.h"
+#include "LineGapBuffer.h"
 
 class Editor;
 class Buffer;
 class View;
 class CommandQueue;
-class LineGapBuffer;
 
 class Command
 {
@@ -516,18 +516,22 @@ public:
 class PasteCommand : public Command
 {
 private:
-    int m_cursorX = 0;
-    int m_cursorY = 0;
+    int m_pasteCursorX = 0;
+    int m_pasteCursorY = 0;
 
-    int m_previousVisualX = 0;
-    int m_previousVisualY = 0;
+    int m_initialYankX = 0;
+    int m_finalYankX = 0;
+
+    int m_initialYankY = 0;
+    int m_finalYankY = 0;
 
     int m_lowerBoundX = 0;
     int m_upperBoundX = 0;
 
     bool m_insertingOnOnlyEmptyLine = false;
 
-    std::vector<std::vector<char>> m_lines;
+    std::vector<LineGapBuffer> m_yankedLines;
+    YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
 
     void redo() override;
     void undo() override;

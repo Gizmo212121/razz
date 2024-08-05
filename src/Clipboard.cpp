@@ -1,4 +1,5 @@
 #include "Clipboard.h"
+#include <iterator>
 
 void Clipboard::add(const std::shared_ptr<LineGapBuffer>& line)
 {
@@ -20,13 +21,17 @@ void Clipboard::lineUpdate()
     m_yankType = LINE_YANK;
 }
 
-void Clipboard::visualUpdate(const int initialX, const int finalX, const int boundDifferenceY)
+void Clipboard::visualUpdate(const int initialX, const int finalX, const int initialY, const int finalY)
 {
     m_numberOfLines = 0;
+
     m_yankType = VISUAL_YANK;
+
     m_initialX = initialX;
     m_finalX = finalX;
-    m_differenceBoundsY = boundDifferenceY;
+
+    m_initialY = initialY;
+    m_finalY = finalY;
 }
 
 void Clipboard::blockUpdate(const int initialX, const int finalX)
@@ -49,4 +54,14 @@ const LineGapBuffer& Clipboard::operator [] (size_t index) const
         std::cerr << "Incorrect clipboard getter-index: " << index << '\n';
         exit(1);
     }
+}
+
+void Clipboard::copy(std::vector<LineGapBuffer>& vec) const
+{
+    vec.reserve(m_numberOfLines);
+
+    std::copy_n(m_fullLines.begin(), m_numberOfLines, std::back_inserter(vec));
+
+
+    // std::copy(m_fullLines.begin(), m_fullLines.begin() + m_numberOfLines - 1, vec.begin());
 }
