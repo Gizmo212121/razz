@@ -38,6 +38,7 @@ private:
     void handleFindCommand(int input);
     void handleDeleteToInsertCommands(int input);
     void handleGoCommands(int input);
+    void handleYankCommands(int input);
 
     void clearRepetitionBuffer() { m_repetitionBuffer.clear(); }
     int repetitionCount();

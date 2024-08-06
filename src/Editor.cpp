@@ -12,6 +12,8 @@ Editor::~Editor()
     clear();
     refresh();
     endwin();
+
+    Timer::print();
 }
 
 void Editor::initNcurses()
@@ -66,7 +68,6 @@ void Editor::initNcurses()
 
     noecho();
     raw();
-    // cbreak();
     keypad(stdscr, true);
 }
 

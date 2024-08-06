@@ -16,6 +16,10 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <chrono>
+
+// We want every file to be able to complete benchmarks
+#include "Timer.h"
 
 enum MODE
 {

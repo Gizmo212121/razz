@@ -5,6 +5,7 @@
 #include "InputController.h"
 #include "View.h"
 #include "Clipboard.h"
+#include <string>
 
 class Editor
 {
@@ -19,6 +20,8 @@ private:
     CommandQueue m_commandQueue;
     InputController m_inputController;
     Clipboard m_clipBoard;
+
+    std::vector<std::string> m_benchmarkMessages;
 
 private:
 

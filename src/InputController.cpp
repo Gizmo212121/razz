@@ -4,6 +4,7 @@
 #include "Command.h"
 #include "Includes.h"
 #include <cstdlib>
+#include <ncurses.h>
 #include <string>
 
 InputController::InputController(Editor* editor)
@@ -40,7 +41,6 @@ void InputController::handleInput()
     if (currentMode == NORMAL_MODE)
     {
         m_circularInputBuffer.add(input);
-        m_editor->view().displayCircularInputBuffer();
 
         handleNormalModeInput(input);
     }
@@ -102,6 +102,11 @@ void InputController::handleNormalModeInput(int input)
     else if (m_commandBuffer == "g")
     {
         handleGoCommands(input);
+        return;
+    }
+    else if (m_commandBuffer == "y")
+    {
+        handleYankCommands(input);
         return;
     }
 
@@ -180,6 +185,9 @@ void InputController::handleNormalModeInput(int input)
             break;
         case g:
             m_commandBuffer.push_back('g');
+            break;
+        case y:
+            m_commandBuffer.push_back('y');
             break;
         case SEMICOLON:
             m_editor->commandQueue().execute<FindCharacterCommand>(false, repetitionCount(), m_findCharacter, m_searchedForward);
@@ -562,28 +570,28 @@ void InputController::handleDeleteCommands(int input)
             m_editor->commandQueue().execute<RemoveLineCommand>(false, rep);
             break;
         case w:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_BY_WORD, false);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD, false);
             break;
         case s:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_BY_WORD, false);
             break;
         case S:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, 0, false);
             break;
         case e:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END, false);
             break;
         case E:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_FORWARD | JUMP_TO_END, false);
             break;
         case q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_BY_WORD | JUMP_TO_END, false);
             break;
         case Q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, rep, JUMP_TO_END, false);
             break;
         case i:
         {
@@ -652,36 +660,28 @@ void InputController::handleDeleteToInsertCommands(int input)
             m_editor->commandQueue().execute<RemoveLineToInsertCommand>(false, 1);
             break;
         case w:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD, true);
             break;
         case W:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD, true);
             break;
         case s:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_BY_WORD);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_BY_WORD, true);
             break;
         case S:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, 0);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, 0, true);
             break;
         case e:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END, true);
             break;
         case E:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_FORWARD | JUMP_TO_END, true);
             break;
         case q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_BY_WORD | JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_BY_WORD | JUMP_TO_END, true);
             break;
         case Q:
-            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_TO_END);
-            m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+            m_editor->commandQueue().execute<JumpCursorDeleteWordCommand>(false, 1, JUMP_TO_END, true);
             break;
         default:
             // TODO: Send signal that command isn't valid
@@ -861,6 +861,26 @@ void InputController::handleGoCommands(int input)
             break;
         case i:
             m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            break;
+    }
+
+    m_commandBuffer.clear();
+}
+
+void InputController::handleYankCommands(int input)
+{
+    clearRepetitionBuffer();
+
+    switch (input)
+    {
+        case y:
+            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 0);
+            break;
+        case p:
+            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, -1);
+            break;
+        case i:
+            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 1);
             break;
     }
 

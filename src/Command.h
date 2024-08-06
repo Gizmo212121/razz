@@ -353,16 +353,17 @@ private:
     std::vector<char> m_characters;
     int m_jumpCode;
 
-    // int m_differenceX;
     int m_startX;
     int m_endX;
+
+    bool m_toInsert = false;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
-    JumpCursorDeleteWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int code)
-        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_jumpCode(code) {}
+    JumpCursorDeleteWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int code, bool toInsert)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_jumpCode(code), m_toInsert(toInsert) {}
 };
 
 class JumpCursorDeletePreviousWordInsertModeCommand : public Command
@@ -554,6 +555,20 @@ private:
 public:
     VisualYankCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, YANK_TYPE yankType)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_yankType(yankType) {}
+};
+
+class NormalYankLineCommand : public Command
+{
+private:
+    int m_direction = 0;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    NormalYankLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int direction)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_direction(direction) {}
 };
 
 class QuickVerticalMovementCommand : public Command

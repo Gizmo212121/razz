@@ -72,6 +72,8 @@ int View::wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLi
 
 void View::display()
 {
+    Timer timer("display");
+
     const FileGapBuffer& fileGapBuffer = m_buffer->getFileGapBuffer();
     if (!fileGapBuffer.bufferSize())
         return;
@@ -319,6 +321,21 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         clrtoeol();
     }
 
+    if (lineSize == 0)
+    {
+        if (currentMode == VISUAL_MODE || currentMode == VISUAL_LINE_MODE || currentMode == VISUAL_BLOCK_MODE)
+        {
+            const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+
+            if (row + extraLinesFromWrapping >= std::min(previousVisualPos.first, cursorPos.first) && row + extraLinesFromWrapping <= std::max(previousVisualPos.first, cursorPos.first))
+            {
+                attron(COLOR_PAIR(VISUAL_HIGHLIGHT_PAIR));
+                printCharacter(row + extraLinesFromWrapping, m_reservedColumnsForLineNumbering, ' ');
+                attroff(COLOR_PAIR(VISUAL_HIGHLIGHT_PAIR));
+            }
+        }
+    }
+
     // Color the rest of the line the cursor is at
 
     if (row == relativeCursorY && !inVisualMode)
@@ -372,8 +389,8 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
             {
                 if (relativeCursorY == row)
                 {
-                    attron(A_BOLD);
                     attron(COLOR_PAIR(LINE_NUMBER_ORANGE));
+                    attron(A_BOLD);
 
                     addch(lineNumber[i + numberDigits - m_reservedColumnsForLineNumbering + 1]);
 
@@ -383,7 +400,14 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
                 else
                 {
                     attron(COLOR_PAIR(LINE_NUMBER_GREY));
+
                     addch(lineNumber[i + numberDigits - m_reservedColumnsForLineNumbering + 1]);
+
+                    // FIXME: Stupid fix; probably makes the rendering go slower
+                    //        it fixes the mouse flickering
+                    curs_set(0);
+                    refresh();
+
                     attroff(COLOR_PAIR(LINE_NUMBER_GREY));
                 }
             }

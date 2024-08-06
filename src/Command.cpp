@@ -1036,9 +1036,12 @@ bool JumpCursorDeleteWordCommand::execute()
 
     int targetX = getXCoordinateFromJumpCode(m_jumpCode);
 
-    if ((m_jumpCode >> 2 & 1) && (m_jumpCode))
+    if (m_jumpCode & JUMP_TO_END)
     {
-
+        if (m_jumpCode & JUMP_FORWARD)
+        {
+            targetX += 1;
+        }
     }
 
     int differenceX = targetX - m_x;
@@ -1049,6 +1052,14 @@ bool JumpCursorDeleteWordCommand::execute()
     if (differenceX == 0) { return false; }
 
     removeCharactersInRangeAndInsertIntoVector(m_characters, m_startX, m_endX, m_y);
+
+    m_editor->buffer().moveCursor(m_y, m_startX);
+
+    if (m_toInsert)
+    {
+        m_editor->setMode(INSERT_MODE);
+        m_editor->view().insertCursor();
+    }
 
     if (m_renderExecute) { m_view->display(); }
 
@@ -1834,6 +1845,8 @@ bool PasteCommand::execute()
 
             }
         }
+
+        m_editor->buffer().moveCursor(m_pasteCursorY, m_pasteCursorX + 1);
     }
 
     m_buffer->shiftCursorX(0);
@@ -1882,6 +1895,33 @@ bool VisualYankCommand::execute()
     return false;
 }
 
+void NormalYankLineCommand::redo() {}
+void NormalYankLineCommand::undo() {}
+bool NormalYankLineCommand::execute()
+{
+    Clipboard& clipboard = m_editor->clipBoard();
+    const std::pair<int, int>& initialYankPos = m_editor->buffer().getCursorPos();
+
+    int lowerBoundY = std::min(initialYankPos.first, initialYankPos.first + m_direction);
+    int upperBoundY = std::max(initialYankPos.first, initialYankPos.first + m_direction);
+
+    lowerBoundY = std::max(0, lowerBoundY);
+    upperBoundY = std::min(static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()) - 1, upperBoundY);
+
+    clipboard.lineUpdate();
+
+    for (int i = lowerBoundY; i <= upperBoundY; i++)
+    {
+        clipboard.add(m_editor->buffer().getLineGapBuffer(i));
+    }
+
+    if (m_renderExecute) { m_editor->view().display(); }
+
+    // TODO: Add a quick highlight that shows the yank took place
+
+    return false;
+}
+
 void QuickVerticalMovementCommand::redo() {}
 void QuickVerticalMovementCommand::undo() {}
 bool QuickVerticalMovementCommand::execute()
@@ -1889,9 +1929,13 @@ bool QuickVerticalMovementCommand::execute()
     int direction = (m_down) ? -1 : 1;
     int distance = LINES / 2;
 
+    int initCursorY = m_editor->buffer().getCursorPos().first;
+
     m_editor->buffer().shiftCursorY(distance * direction);
 
-    if (m_renderExecute) { m_editor->view().display(); }
+    int finalCursorY = m_editor->buffer().getCursorPos().first;
+
+    if (initCursorY != finalCursorY && m_renderExecute) { m_editor->view().display(); }
 
     return false;
 }
