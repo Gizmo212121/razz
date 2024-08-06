@@ -132,11 +132,11 @@ char LineGapBuffer::at(size_t index) const
     {
         endwin();
         std::cerr << "Index out of bounds: " << index << '\n';
-        std::cout << "File Gap Buffer Info:\n\t" << "Buffer Size: " << m_bufferSize << "\n\t";
+        std::cout << "Line Gap Buffer Info:\n\t" << "Buffer Size: " << m_bufferSize << "\n\t";
         std::cout << "Num characters: " << lineSize() << "\n\t";
         std::cout << "Pre index: " << preGapIndex() << "\n\t";
         std::cout << "Post index: " << postGapIndex() << "\n";
-        // exit(1);
+        exit(1);
     }
 
     if (index < m_preGapIndex)

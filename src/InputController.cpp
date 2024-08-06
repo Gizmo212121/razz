@@ -726,6 +726,24 @@ void InputController::handleVisualModes(int input)
                 m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_BLOCK_MODE, 0);
             }
             break;
+        case y:
+            switch (currentMode)
+            {
+                case VISUAL_MODE:
+                    m_editor->commandQueue().execute<VisualYankCommand>(false, 1, VISUAL_YANK);
+                    break;
+                case VISUAL_LINE_MODE:
+                    m_editor->commandQueue().execute<VisualYankCommand>(false, 1, LINE_YANK);
+                    break;
+                case VISUAL_BLOCK_MODE:
+                    m_editor->commandQueue().execute<VisualYankCommand>(false, 1, BLOCK_YANK);
+                    break;
+                default:
+                    endwin();
+                    std::cerr << "Unexpected mode: " << currentMode << '\n';
+                    exit(1);
+            }
+            break;
         case h:
             m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, -1 * repetitionCount());
             break;
@@ -795,6 +813,31 @@ void InputController::handleVisualModes(int input)
             {
                 m_editor->commandQueue().execute<TabLineVisualCommand>(true, 1, true);
             }
+            break;
         }
+        case w:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
+            break;
+        case W:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD);
+            break;
+        case s:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_BY_WORD);
+            break;
+        case S:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), 0);
+            break;
+        case e:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            break;
+        case E:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_TO_END);
+            break;
+        case q:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_BY_WORD | JUMP_TO_END);
+            break;
+        case Q:
+            m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_TO_END);
+            break;
     }
 }

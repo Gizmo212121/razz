@@ -24,7 +24,7 @@ protected:
     // Pre: This vector is assumed to be empty, as it is resized inside the function, end - start > 0
     void removeCharactersInRangeAndInsertIntoVector(std::vector<char>& vec, int start, int end, int cursorY) const;
     // Takes characters from a char vector and inserts them one by one into a line gap buffer from start to end inclusive
-    void insertCharactersInRangeFromVector(std::vector<char>& vec, int start, int end, int cursorY) const;
+    void insertCharactersInRangeFromVector(const std::vector<char>& vec, int start, int end, int cursorY) const;
     // Takes a jump code and returns the absolute x coordinate of the resulting jump
     int getXCoordinateFromJumpCode(int jumpCode) const;
     // Tabs a line left or right, returns the directional-displacement in characters
@@ -540,4 +540,32 @@ private:
 public:
     PasteCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
+class VisualYankCommand : public Command
+{
+private:
+    YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    VisualYankCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, YANK_TYPE yankType)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_yankType(yankType) {}
+};
+
+class QuickVerticalMovementCommand : public Command
+{
+private:
+    YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    QuickVerticalMovementCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, YANK_TYPE yankType)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_yankType(yankType) {}
 };

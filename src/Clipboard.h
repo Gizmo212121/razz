@@ -26,7 +26,7 @@ public:
     void lineUpdate();
     // Lower and upper bounds should be inclusive
     void visualUpdate(const int initialX, const int finalX, const int initialY, const int finalY);
-    void blockUpdate(const int initialX, const int finalX);
+    void blockUpdate(const int initialX, const int finalX, const int initialY, const int finalY);
 
     // Getters
     size_t numberOfLines() const { return m_numberOfLines; }

@@ -124,7 +124,7 @@ void Command::removeCharactersInRangeAndInsertIntoVector(std::vector<char>& vec,
     }
 }
 
-void Command::insertCharactersInRangeFromVector(std::vector<char>& vec, int start, int end, int cursorY) const
+void Command::insertCharactersInRangeFromVector(const std::vector<char>& vec, int start, int end, int cursorY) const
 {
     assert(cursorY >= 0);
     assert(end - start >= 0);
@@ -937,7 +937,7 @@ bool RemoveLineToInsertCommand::execute()
     if (lineSize == 0) { return false; }
 
     Clipboard& clipBoard = m_editor->clipBoard();
-    clipBoard.blockUpdate(0, lineSize - 1);
+    clipBoard.lineUpdate();
     clipBoard.add(line);
 
     m_indexOfFirstNonSpaceCharacter = m_buffer->indexOfFirstNonSpaceCharacter(line);
@@ -1437,9 +1437,14 @@ bool RemoveLinesVisualBlockModeCommand::execute()
 
     m_buffer->moveCursor(m_lowerBoundY, 0);
 
+    m_editor->clipBoard().blockUpdate(m_previousVisualX, m_cursorX, m_previousVisualY, m_cursorY);
+
     for (int row = m_lowerBoundY; row <= m_upperBoundY; row++)
     {
         const std::shared_ptr<LineGapBuffer>& line = m_buffer->getLineGapBuffer(row);
+
+        m_editor->clipBoard().add(line);
+
         int lineSize = static_cast<int>(line->lineSize());
 
         if (lineSize == 0) { continue; }
@@ -1767,6 +1772,63 @@ bool PasteCommand::execute()
     else // Block yank
     {
         // All characters are inserted in-place onto preexisting lines
+        Buffer& currentBuffer = m_editor->buffer();
+
+        m_initialYankX = clipboard.initialX();
+        m_finalYankX = clipboard.finalX();
+        m_initialYankY = clipboard.initialY();
+        m_finalYankY = clipboard.finalY();
+
+        m_lowerBoundX = std::min(m_initialYankX, m_finalYankX);
+        m_upperBoundX = std::max(m_initialYankX, m_finalYankX);
+
+        int lowerY = std::min(m_initialYankY, m_finalYankY);
+        int upperY = std::max(m_initialYankY, m_finalYankY);
+
+        int differenceY = m_finalYankY - m_initialYankY;
+
+        int startX = (differenceY >= 0) ? m_initialYankX : m_finalYankX;
+        int endX = (differenceY >= 0) ? m_finalYankX : m_initialYankX;
+
+        for (int i = lowerY; i <= upperY; i++)
+        {
+            currentBuffer.moveCursor(m_pasteCursorY + i - lowerY, 0);
+
+            int bufferIndex = m_pasteCursorY + i - lowerY;
+            if (bufferIndex >= static_cast<int>(currentBuffer.getFileGapBuffer().numberOfLines()))
+            {
+                currentBuffer.insertLine(true);
+            }
+
+            const std::shared_ptr<LineGapBuffer>& bufferLine = currentBuffer.getLineGapBuffer(m_pasteCursorY + i - lowerY);
+            const int bufferLineSize = static_cast<int>(bufferLine->lineSize());
+
+            // Insert spaces so the pasted block is contiguous
+            if (m_pasteCursorX != 0)
+            {
+                currentBuffer.moveCursor(m_pasteCursorY + i - lowerY, std::min(bufferLineSize, m_pasteCursorX + 1));
+                for (int j = 0; j < m_pasteCursorX + 1 - bufferLineSize; j++)
+                {
+                    currentBuffer.insertCharacter(' ');
+                }
+            }
+
+            // Insert the characters from the block
+            for (int j = startX; j <= std::min(endX, static_cast<int>(m_yankedLines[i - lowerY].lineSize())); j++)
+            {
+                const LineGapBuffer& yankedLine = m_yankedLines[i - lowerY];
+
+                if (j >= static_cast<int>(yankedLine.lineSize()))
+                {
+                    currentBuffer.insertCharacter(' ');
+                }
+                else
+                {
+                    currentBuffer.insertCharacter(yankedLine[j]);
+                }
+
+            }
+        }
     }
 
     m_buffer->shiftCursorX(0);
@@ -1774,4 +1836,43 @@ bool PasteCommand::execute()
     if (m_renderExecute) { m_view->display(); }
 
     return true;
+}
+
+void VisualYankCommand::redo() {}
+void VisualYankCommand::undo() {}
+bool VisualYankCommand::execute()
+{
+    Clipboard& clipboard = m_editor->clipBoard();
+    const std::pair<int, int>& initialYankPos = m_editor->buffer().getCursorPos();
+    const std::pair<int, int>& finalYankPos = m_editor->inputController().initialVisualModeCursor();
+
+    if (m_yankType == LINE_YANK)
+    {
+        clipboard.lineUpdate();
+    }
+    else if (m_yankType == VISUAL_YANK)
+    {
+        clipboard.visualUpdate(initialYankPos.second, finalYankPos.second, initialYankPos.first, finalYankPos.first);
+    }
+    else
+    {
+        clipboard.blockUpdate(initialYankPos.second, finalYankPos.second, initialYankPos.first, finalYankPos.first);
+    }
+
+    int lowerBoundY = std::min(finalYankPos.first, initialYankPos.first);
+    int upperBoundY = std::max(finalYankPos.first, initialYankPos.first);
+
+    for (int i = lowerBoundY; i <= upperBoundY; i++)
+    {
+        clipboard.add(m_editor->buffer().getLineGapBuffer(i));
+    }
+
+    m_editor->setMode(NORMAL_MODE);
+    m_editor->view().normalCursor();
+
+    if (m_renderExecute) { m_editor->view().display(); }
+
+    // TODO: Add a quick highlight that shows the yank took place
+
+    return false;
 }

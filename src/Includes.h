@@ -369,6 +369,7 @@ enum KEYS
     v = 118,
     w = 119,
     x = 120,
+    y = 121,
     LEFT_BRACE = 123,
     SPACE_DOT = 250,
     BACKSPACE = 263,

@@ -34,12 +34,14 @@ void Clipboard::visualUpdate(const int initialX, const int finalX, const int ini
     m_finalY = finalY;
 }
 
-void Clipboard::blockUpdate(const int initialX, const int finalX)
+void Clipboard::blockUpdate(const int initialX, const int finalX, const int initialY, const int finalY)
 {
     m_numberOfLines = 0;
     m_yankType = BLOCK_YANK;
     m_initialX = initialX;
     m_finalX = finalX;
+    m_initialY = initialY;
+    m_finalY = finalY;
 }
 
 const LineGapBuffer& Clipboard::operator [] (size_t index) const
