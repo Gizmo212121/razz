@@ -1036,6 +1036,11 @@ bool JumpCursorDeleteWordCommand::execute()
 
     int targetX = getXCoordinateFromJumpCode(m_jumpCode);
 
+    if ((m_jumpCode >> 2 & 1) && (m_jumpCode))
+    {
+
+    }
+
     int differenceX = targetX - m_x;
 
     m_startX = std::min(targetX, m_x);
@@ -1873,6 +1878,20 @@ bool VisualYankCommand::execute()
     if (m_renderExecute) { m_editor->view().display(); }
 
     // TODO: Add a quick highlight that shows the yank took place
+
+    return false;
+}
+
+void QuickVerticalMovementCommand::redo() {}
+void QuickVerticalMovementCommand::undo() {}
+bool QuickVerticalMovementCommand::execute()
+{
+    int direction = (m_down) ? -1 : 1;
+    int distance = LINES / 2;
+
+    m_editor->buffer().shiftCursorY(distance * direction);
+
+    if (m_renderExecute) { m_editor->view().display(); }
 
     return false;
 }

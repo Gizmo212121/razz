@@ -99,6 +99,11 @@ void InputController::handleNormalModeInput(int input)
         handleDeleteToInsertCommands(input);
         return;
     }
+    else if (m_commandBuffer == "g")
+    {
+        handleGoCommands(input);
+        return;
+    }
 
     switch (input)
     {
@@ -130,10 +135,10 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<CursorFullRightCommand>(false, 1);
             break;
         case I:
-            m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, false);
             break;
         case P:
-            m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
+            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, true);
             break;
         case u:
             m_editor->commandQueue().execute<UndoCommand>(false, 1);
@@ -172,6 +177,9 @@ void InputController::handleNormalModeInput(int input)
             break;
         case F:
             m_commandBuffer.push_back('F');
+            break;
+        case g:
+            m_commandBuffer.push_back('g');
             break;
         case SEMICOLON:
             m_editor->commandQueue().execute<FindCharacterCommand>(false, repetitionCount(), m_findCharacter, m_searchedForward);
@@ -840,4 +848,21 @@ void InputController::handleVisualModes(int input)
             m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_TO_END);
             break;
     }
+}
+
+void InputController::handleGoCommands(int input)
+{
+    clearRepetitionBuffer();
+
+    switch (input)
+    {
+        case p:
+            m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
+            break;
+        case i:
+            m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            break;
+    }
+
+    m_commandBuffer.clear();
 }

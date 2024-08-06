@@ -559,13 +559,13 @@ public:
 class QuickVerticalMovementCommand : public Command
 {
 private:
-    YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
+    bool m_down = true;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 
 public:
-    QuickVerticalMovementCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, YANK_TYPE yankType)
-        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_yankType(yankType) {}
+    QuickVerticalMovementCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool down)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_down(down) {}
 };
