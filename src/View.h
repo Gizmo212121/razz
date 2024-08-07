@@ -22,6 +22,11 @@ private:
     int m_previousCursorY = 0;
     int m_previousCursorX = 0;
 
+    std::mutex displayMutex;
+    std::atomic<bool> m_displayHighlight = false;
+
+    YANK_TYPE m_previousYankType = YANK_TYPE::LINE_YANK;
+
     void adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold);
     void printCharacter(int y, int x, char character);
     void clearRemainingLines(int maxRender, int extraLinesFromWrapping);
@@ -32,6 +37,8 @@ private:
     int printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row, int indexOfFirstNonSpace, int extraLinesFromWrapping, int relativeCursorY);
     void printBufferInformationLine(const std::pair<int, int>& cursorPos);
     int getColorPair(MODE currentMode, int row, int column, const std::pair<int, int>& cursorPos, int relativeCursorY) const;
+
+    void yankHighlight(int milliseconds);
 
 public:
 
@@ -49,5 +56,7 @@ public:
     void normalCursor();
     void insertCursor();
     void replaceCursor();
+
+    void yankHighlightTimer(int milliseconds, YANK_TYPE yankType);
 
 };

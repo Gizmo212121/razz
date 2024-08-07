@@ -3,11 +3,33 @@
 #include "Command.h"
 #include "Includes.h"
 #include "Editor.h"
+#include <chrono>
 #include <ncurses.h>
+#include <thread>
 
 View::View(Editor* editor, Buffer* buffer)
     : m_editor(editor), m_buffer(buffer)
 {
+}
+
+void View::yankHighlightTimer(int milliseconds, YANK_TYPE yankType)
+{
+    m_previousYankType = yankType;
+
+    std::thread(&View::yankHighlight, this, milliseconds).detach();
+}
+
+void View::yankHighlight(int milliseconds)
+{
+    m_displayHighlight.store(true);
+
+    display();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+
+    m_displayHighlight.store(false);
+
+    display();
 }
 
 void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold)
@@ -72,7 +94,10 @@ int View::wrappedLinesBeforeCursor(const FileGapBuffer& fileGapBuffer, int numLi
 
 void View::display()
 {
+    std::lock_guard<std::mutex> lock(displayMutex);
+
     Timer timer("display");
+
 
     const FileGapBuffer& fileGapBuffer = m_buffer->getFileGapBuffer();
     if (!fileGapBuffer.bufferSize())
@@ -327,7 +352,7 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         {
             const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
 
-            if (row + extraLinesFromWrapping >= std::min(previousVisualPos.first, cursorPos.first) && row + extraLinesFromWrapping <= std::max(previousVisualPos.first, cursorPos.first))
+            if (row + extraLinesFromWrapping + m_linesDown >= std::min(previousVisualPos.first, cursorPos.first) && row + extraLinesFromWrapping + m_linesDown <= std::max(previousVisualPos.first, cursorPos.first))
             {
                 attron(COLOR_PAIR(VISUAL_HIGHLIGHT_PAIR));
                 printCharacter(row + extraLinesFromWrapping, m_reservedColumnsForLineNumbering, ' ');
@@ -425,88 +450,166 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
 
 int View::getColorPair(MODE currentMode, int row, int column, const std::pair<int, int>& cursorPos, int relativeCursorY) const
 {
-    const std::pair<int, int>& visualModeInitialCursor = m_editor->inputController().initialVisualModeCursor();
-
-    switch (currentMode)
+    if (m_displayHighlight)
     {
-        case VISUAL_MODE:
+        const std::pair<int, int>& initialYankPos = m_buffer->lastYankInitialCursor();
+        const std::pair<int, int>& finalYankPos = m_buffer->lastYankFinalCursor();
+
+        switch (m_previousYankType)
         {
-            int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
-            int lowerBoundY = std::min(relativeCursorY, relativePreviousVisualY);
-            int upperBoundY = std::max(relativeCursorY, relativePreviousVisualY);
-
-            int lowerBoundX = std::min(cursorPos.second, visualModeInitialCursor.second);
-            int upperBoundX = std::max(cursorPos.second, visualModeInitialCursor.second);
-
-            bool isWithinXBounds = (column >= lowerBoundX && column <= upperBoundX);
-
-            if (row == lowerBoundY)
+            case VISUAL_YANK:
             {
-                if (lowerBoundY == upperBoundY)
+                int lowerBoundY = std::min(initialYankPos.first, finalYankPos.first);
+                int upperBoundY = std::max(initialYankPos.first, finalYankPos.first);
+
+                int lowerBoundX = std::min(initialYankPos.second, finalYankPos.second);
+                int upperBoundX = std::max(initialYankPos.second, finalYankPos.second);
+
+                bool isWithinXBounds = (column >= lowerBoundX && column <= upperBoundX);
+
+                if (row + m_linesDown == lowerBoundY)
                 {
-                    if (isWithinXBounds) { return VISUAL_HIGHLIGHT_PAIR; }
+                    if (lowerBoundY == upperBoundY)
+                    {
+                        if (isWithinXBounds) { return YANK_HIGHLIGHT_PAIR; }
+                    }
+                    else if ((lowerBoundY < initialYankPos.first && column >= finalYankPos.second) ||
+                             (lowerBoundY > initialYankPos.first && column >= initialYankPos.second) ||
+                             (lowerBoundY == initialYankPos.first && column >= initialYankPos.second))
+                    {
+                        return YANK_HIGHLIGHT_PAIR;
+                    }
                 }
-                else if ((lowerBoundY < relativeCursorY && column >= visualModeInitialCursor.second) ||
-                         (lowerBoundY > relativeCursorY && column >= cursorPos.second) ||
-                         (lowerBoundY == relativeCursorY && column >= cursorPos.second))
+                else if (row + m_linesDown == upperBoundY)
                 {
-                    return VISUAL_HIGHLIGHT_PAIR;
+                    if ((upperBoundY > initialYankPos.first && column <= finalYankPos.second) ||
+                        (upperBoundY <= initialYankPos.first && column <= initialYankPos.second))
+                    {
+                        return YANK_HIGHLIGHT_PAIR;
+                    }
                 }
-            }
-            else if (row == upperBoundY)
-            {
-                if ((upperBoundY > relativeCursorY && column <= visualModeInitialCursor.second) ||
-                    (upperBoundY <= relativeCursorY && column <= cursorPos.second))
+                else if (row + m_linesDown > lowerBoundY && row + m_linesDown < upperBoundY)
                 {
-                    return VISUAL_HIGHLIGHT_PAIR;
+                    return YANK_HIGHLIGHT_PAIR;
                 }
-            }
-            else if (row > lowerBoundY && row < upperBoundY)
-            {
-                return VISUAL_HIGHLIGHT_PAIR;
-            }
 
-            break;
-        }
-        case VISUAL_LINE_MODE:
-        {
-            int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
-
-            int lowerBound = std::min(relativeCursorY, relativePreviousVisualY);
-            int upperBound = std::max(relativeCursorY, relativePreviousVisualY);
-
-            if (row >= lowerBound && row <= upperBound)
-            {
-                return VISUAL_HIGHLIGHT_PAIR;
+                break;
             }
-            break;
-        }
-        case VISUAL_BLOCK_MODE:
-        {
-            int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
-            int lowerBoundY = std::min(relativeCursorY, relativePreviousVisualY);
-            int upperBoundY = std::max(relativeCursorY, relativePreviousVisualY);
+            case LINE_YANK:
+            {
+                int lowerBound = std::min(initialYankPos.first, finalYankPos.first);
+                int upperBound = std::max(initialYankPos.first, finalYankPos.first);
 
-            int lowerBoundX = std::min(cursorPos.second, visualModeInitialCursor.second);
-            int upperBoundX = std::max(cursorPos.second, visualModeInitialCursor.second);
+                if (row + m_linesDown >= lowerBound && row + m_linesDown <= upperBound)
+                {
+                    return YANK_HIGHLIGHT_PAIR;
+                }
+                break;
+            }
+            case BLOCK_YANK:
+            {
+                int lowerBoundY = std::min(initialYankPos.first, finalYankPos.first);
+                int upperBoundY = std::max(initialYankPos.first, finalYankPos.first);
 
-            if (column >= lowerBoundX && column <= upperBoundX && row >= lowerBoundY && row <= upperBoundY)
-            {
-                return VISUAL_HIGHLIGHT_PAIR;
+                int lowerBoundX = std::min(initialYankPos.second, finalYankPos.second);
+                int upperBoundX = std::max(initialYankPos.second, finalYankPos.second);
+
+                if (column >= lowerBoundX && column <= upperBoundX && row + m_linesDown >= lowerBoundY && row + m_linesDown <= upperBoundY)
+                {
+                    return YANK_HIGHLIGHT_PAIR;
+                }
+                break;
             }
-            break;
-        }
-        default:
-            if (row == relativeCursorY)
-            {
-                return PATH_COLOR_PAIR;
-            }
-            else
-            {
+            default:
                 return BACKGROUND;
-            }
-            break;
+        }
     }
+    else
+    {
+        const std::pair<int, int>& visualModeInitialCursor = m_editor->inputController().initialVisualModeCursor();
+
+        switch (currentMode)
+        {
+            case VISUAL_MODE:
+            {
+                int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
+                int lowerBoundY = std::min(relativeCursorY, relativePreviousVisualY);
+                int upperBoundY = std::max(relativeCursorY, relativePreviousVisualY);
+
+                int lowerBoundX = std::min(cursorPos.second, visualModeInitialCursor.second);
+                int upperBoundX = std::max(cursorPos.second, visualModeInitialCursor.second);
+
+                bool isWithinXBounds = (column >= lowerBoundX && column <= upperBoundX);
+
+                if (row == lowerBoundY)
+                {
+                    if (lowerBoundY == upperBoundY)
+                    {
+                        if (isWithinXBounds) { return VISUAL_HIGHLIGHT_PAIR; }
+                    }
+                    else if ((lowerBoundY < relativeCursorY && column >= visualModeInitialCursor.second) ||
+                             (lowerBoundY > relativeCursorY && column >= cursorPos.second) ||
+                             (lowerBoundY == relativeCursorY && column >= cursorPos.second))
+                    {
+                        return VISUAL_HIGHLIGHT_PAIR;
+                    }
+                }
+                else if (row == upperBoundY)
+                {
+                    if ((upperBoundY > relativeCursorY && column <= visualModeInitialCursor.second) ||
+                        (upperBoundY <= relativeCursorY && column <= cursorPos.second))
+                    {
+                        return VISUAL_HIGHLIGHT_PAIR;
+                    }
+                }
+                else if (row > lowerBoundY && row < upperBoundY)
+                {
+                    return VISUAL_HIGHLIGHT_PAIR;
+                }
+
+                break;
+            }
+            case VISUAL_LINE_MODE:
+            {
+                int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
+
+                int lowerBound = std::min(relativeCursorY, relativePreviousVisualY);
+                int upperBound = std::max(relativeCursorY, relativePreviousVisualY);
+
+                if (row >= lowerBound && row <= upperBound)
+                {
+                    return VISUAL_HIGHLIGHT_PAIR;
+                }
+                break;
+            }
+            case VISUAL_BLOCK_MODE:
+            {
+                int relativePreviousVisualY = visualModeInitialCursor.first - m_linesDown;
+                int lowerBoundY = std::min(relativeCursorY, relativePreviousVisualY);
+                int upperBoundY = std::max(relativeCursorY, relativePreviousVisualY);
+
+                int lowerBoundX = std::min(cursorPos.second, visualModeInitialCursor.second);
+                int upperBoundX = std::max(cursorPos.second, visualModeInitialCursor.second);
+
+                if (column >= lowerBoundX && column <= upperBoundX && row >= lowerBoundY && row <= upperBoundY)
+                {
+                    return VISUAL_HIGHLIGHT_PAIR;
+                }
+                break;
+            }
+            default:
+                if (row == relativeCursorY)
+                {
+                    return PATH_COLOR_PAIR;
+                }
+                else
+                {
+                    return BACKGROUND;
+                }
+                break;
+        }
+    }
+
 
     return BACKGROUND;
 }
@@ -649,7 +752,6 @@ void View::displayCurrentFileGapBuffer()
 
     for (size_t i = 0; i < ptrsToLines.size(); i++)
     {
-        // printw("%p", &ptrsToLines[i]);
         printw(" | ");
     }
 

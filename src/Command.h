@@ -571,6 +571,20 @@ public:
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_direction(direction) {}
 };
 
+class JumpCursorYankWordCommand : public Command
+{
+private:
+    int m_jumpCode;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    JumpCursorYankWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int jumpCode)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_jumpCode(jumpCode) {}
+};
+
 class QuickVerticalMovementCommand : public Command
 {
 private:

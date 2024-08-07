@@ -140,10 +140,10 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<CursorFullRightCommand>(false, 1);
             break;
         case I:
-            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, false);
+            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, true);
             break;
         case P:
-            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, true);
+            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, false);
             break;
         case u:
             m_editor->commandQueue().execute<UndoCommand>(false, 1);
@@ -771,10 +771,10 @@ void InputController::handleVisualModes(int input)
             m_editor->commandQueue().execute<CursorFullRightCommand>(false, 1);
             break;
         case I:
-            m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, true);
             break;
         case P:
-            m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
+            m_editor->commandQueue().execute<QuickVerticalMovementCommand>(false, 1, false);
             break;
         case d:
             switch (currentMode)
@@ -847,6 +847,12 @@ void InputController::handleVisualModes(int input)
         case Q:
             m_editor->commandQueue().execute<JumpCursorCommand>(false, repetitionCount(), JUMP_TO_END);
             break;
+        case g:
+            m_editor->commandQueue().execute<CursorFullTopCommand>(false, 1);
+            break;
+        case G:
+            m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            break;
     }
 }
 
@@ -881,6 +887,30 @@ void InputController::handleYankCommands(int input)
             break;
         case i:
             m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 1);
+            break;
+        case w:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
+            break;
+        case W:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD);
+            break;
+        case s:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_BY_WORD);
+            break;
+        case S:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), 0);
+            break;
+        case e:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            break;
+        case E:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_TO_END);
+            break;
+        case q:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_BY_WORD | JUMP_TO_END);
+            break;
+        case Q:
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_TO_END);
             break;
     }
 

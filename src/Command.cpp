@@ -1888,9 +1888,10 @@ bool VisualYankCommand::execute()
     m_editor->setMode(NORMAL_MODE);
     m_editor->view().normalCursor();
 
-    if (m_renderExecute) { m_editor->view().display(); }
+    m_editor->buffer().setLastYankInitialCursor(initialYankPos);
+    m_editor->buffer().setLastYankFinalCursor(finalYankPos);
 
-    // TODO: Add a quick highlight that shows the yank took place
+    if (m_renderExecute) { m_editor->view().yankHighlightTimer(YANK_HIGHLIGHT_MILLISECONDS, m_yankType); }
 
     return false;
 }
@@ -1915,9 +1916,36 @@ bool NormalYankLineCommand::execute()
         clipboard.add(m_editor->buffer().getLineGapBuffer(i));
     }
 
-    if (m_renderExecute) { m_editor->view().display(); }
+    m_editor->buffer().setLastYankInitialCursor(std::pair<int, int>(lowerBoundY, initialYankPos.second));
+    m_editor->buffer().setLastYankFinalCursor(std::pair<int, int>(upperBoundY, initialYankPos.second));
 
-    // TODO: Add a quick highlight that shows the yank took place
+    if (m_renderExecute) { m_editor->view().yankHighlightTimer(YANK_HIGHLIGHT_MILLISECONDS, LINE_YANK); }
+
+    return false;
+}
+
+void JumpCursorYankWordCommand::redo() {}
+void JumpCursorYankWordCommand::undo() {}
+bool JumpCursorYankWordCommand::execute()
+{
+    Clipboard& clipboard = m_editor->clipBoard();
+    const std::pair<int, int>& initialYankPos = m_editor->buffer().getCursorPos();
+
+    int targetX = getXCoordinateFromJumpCode(m_jumpCode);
+
+    if (initialYankPos.second == targetX) { return false; }
+
+    int lowerBoundX = std::min(initialYankPos.second, targetX);
+    int upperBoundX = std::max(initialYankPos.second, targetX);
+
+    clipboard.blockUpdate(lowerBoundX, upperBoundX, initialYankPos.first, initialYankPos.first);
+
+    clipboard.add(m_editor->buffer().getLineGapBuffer(initialYankPos.first));
+
+    m_editor->buffer().setLastYankInitialCursor(std::pair<int, int>(initialYankPos.first, lowerBoundX));
+    m_editor->buffer().setLastYankFinalCursor(std::pair<int, int>(initialYankPos.first, upperBoundX));
+
+    if (m_renderExecute) { m_editor->view().yankHighlightTimer(YANK_HIGHLIGHT_MILLISECONDS, BLOCK_YANK); }
 
     return false;
 }
@@ -1926,7 +1954,7 @@ void QuickVerticalMovementCommand::redo() {}
 void QuickVerticalMovementCommand::undo() {}
 bool QuickVerticalMovementCommand::execute()
 {
-    int direction = (m_down) ? -1 : 1;
+    int direction = (m_down) ? 1 : -1;
     int distance = LINES / 2;
 
     int initCursorY = m_editor->buffer().getCursorPos().first;

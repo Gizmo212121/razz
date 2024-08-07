@@ -22,5 +22,5 @@ Timer::~Timer()
 
     duration = end - start;
 
-    m_timerMessages.push_back(m_name + " elapsed time: " + std::to_string(duration.count()));
+    m_timerMessages.push_back(m_name + " elapsed time: " + std::to_string(duration.count()) + "s");
 }

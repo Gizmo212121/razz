@@ -16,9 +16,12 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
-#include <chrono>
 
-// We want every file to be able to complete benchmarks
+#include <chrono>
+#include <thread>
+#include <atomic>
+#include <mutex>
+
 #include "Timer.h"
 
 enum MODE
@@ -40,6 +43,8 @@ enum YANK_TYPE
     BLOCK_YANK,
     VISUAL_YANK,
 };
+
+const int YANK_HIGHLIGHT_MILLISECONDS = 100;
 
 enum CUSTOM_COLORS
 {
@@ -311,6 +316,8 @@ enum COLOR_PAIRS
     PATH_COLOR_PAIR,
     VISUAL_HIGHLIGHT_PAIR,
     ERROR_MESSAGE_PAIR,
+
+    YANK_HIGHLIGHT_PAIR,
 };
 
 enum KEYS
@@ -337,6 +344,7 @@ enum KEYS
     D = 68,
     E = 69,
     F = 70,
+    G = 71,
     H = 72,
     I = 73,
     J = 74,

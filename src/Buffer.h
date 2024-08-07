@@ -15,6 +15,9 @@ private:
     int m_cursorY;
     int m_lastXSinceYMove;
 
+    std::pair<int, int> m_lastYankInitialPos;
+    std::pair<int, int> m_lastYankFinalPos;
+
 private:
 
     void readFromFile(const std::string& fileName);
@@ -71,6 +74,8 @@ public:
 
     // SETTERS
     void setFileName(const std::filesystem::path& filePath) { m_filePath = filePath; }
+    void setLastYankInitialCursor(const std::pair<int, int>& pos) { m_lastYankInitialPos = pos; }
+    void setLastYankFinalCursor(const std::pair<int, int>& pos) { m_lastYankFinalPos = pos; }
 
     // GETTERS
     const FileGapBuffer& getFileGapBuffer() const { return m_file ; }
@@ -78,5 +83,7 @@ public:
     std::pair<int, int> getCursorPos() const { return std::pair<int, int>(m_cursorY, m_cursorX) ; }
     int cursorXBeforeYMove() const { return m_lastXSinceYMove ; }
     const std::filesystem::path& filePath() const { return m_filePath; }
+    const std::pair<int, int>& lastYankInitialCursor() const { return m_lastYankInitialPos; }
+    const std::pair<int, int>& lastYankFinalCursor() const { return m_lastYankFinalPos; }
 
 };

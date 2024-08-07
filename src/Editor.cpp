@@ -64,6 +64,8 @@ void Editor::initNcurses()
     init_pair(PATH_COLOR_PAIR, COLOR_WHITE, GREY19);
     init_pair(ERROR_MESSAGE_PAIR, INDIAN_RED1_1, GREY11);
 
+    init_pair(YANK_HIGHLIGHT_PAIR, COLOR_WHITE, SANDY_BROWN);
+
     bkgd(COLOR_PAIR(BACKGROUND));
 
     noecho();
