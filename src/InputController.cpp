@@ -875,43 +875,50 @@ void InputController::handleGoCommands(int input)
 
 void InputController::handleYankCommands(int input)
 {
-    clearRepetitionBuffer();
-
     switch (input)
     {
         case y:
-            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 0);
+            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 0, repetitionCount());
             break;
         case p:
-            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, -1);
+            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, -1, repetitionCount());
             break;
         case i:
-            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 1);
+            m_editor->commandQueue().execute<NormalYankLineCommand>(false, 1, 1, repetitionCount());
             break;
         case w:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD, repetitionCount());
             break;
         case W:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_FORWARD, repetitionCount());
             break;
         case s:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_BY_WORD);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_BY_WORD, repetitionCount());
             break;
         case S:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), 0);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, 0, repetitionCount());
             break;
         case e:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_FORWARD | JUMP_BY_WORD | JUMP_TO_END, repetitionCount());
             break;
         case E:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_FORWARD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_FORWARD | JUMP_TO_END, repetitionCount());
             break;
         case q:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_BY_WORD | JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_BY_WORD | JUMP_TO_END, repetitionCount());
             break;
         case Q:
-            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, repetitionCount(), JUMP_TO_END);
+            m_editor->commandQueue().execute<JumpCursorYankWordCommand>(false, 1, JUMP_TO_END, repetitionCount());
             break;
+        case QUOTE:
+            m_editor->commandQueue().execute<JumpCursorYankEndlineCommand>(false, 1, true);
+            clearRepetitionBuffer();
+            break;
+        case H:
+            m_editor->commandQueue().execute<JumpCursorYankEndlineCommand>(false, 1, false);
+            clearRepetitionBuffer();
+            break;
+
     }
 
     m_commandBuffer.clear();

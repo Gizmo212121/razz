@@ -531,6 +531,8 @@ private:
 
     bool m_insertingOnOnlyEmptyLine = false;
 
+    int m_extraLinesInserted = 0;
+
     std::vector<LineGapBuffer> m_yankedLines;
     YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
 
@@ -561,28 +563,44 @@ class NormalYankLineCommand : public Command
 {
 private:
     int m_direction = 0;
+    int m_repetitions = 1;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 
 public:
-    NormalYankLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int direction)
-        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_direction(direction) {}
+    NormalYankLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int direction, int repetitions)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_direction(direction), m_repetitions(repetitions) {}
 };
 
 class JumpCursorYankWordCommand : public Command
 {
 private:
-    int m_jumpCode;
+    int m_jumpCode = 0;
+    int m_repetitions = 1;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 
 public:
-    JumpCursorYankWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int jumpCode)
-        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_jumpCode(jumpCode) {}
+    JumpCursorYankWordCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int jumpCode, int repetitions)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_jumpCode(jumpCode), m_repetitions(repetitions) {}
+};
+
+class JumpCursorYankEndlineCommand : public Command
+{
+private:
+    bool m_right = true;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    JumpCursorYankEndlineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool right)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_right(right) {}
 };
 
 class QuickVerticalMovementCommand : public Command

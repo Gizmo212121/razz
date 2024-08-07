@@ -1660,9 +1660,51 @@ void PasteCommand::redo()
 }
 void PasteCommand::undo()
 {
-    m_buffer->moveCursor(m_pasteCursorY, m_pasteCursorX);
+    Buffer& buffer = m_editor->buffer();
 
+    if (m_yankType == LINE_YANK)
+    {
+        buffer.moveCursor(m_pasteCursorY + 1, m_pasteCursorX);
 
+        for (size_t i = 0; i < m_yankedLines.size(); i++)
+        {
+            if (m_insertingOnOnlyEmptyLine && i == 0)
+            {
+                removeCharactersInRange(0, m_yankedLines[0].lineSize(), m_pasteCursorY);
+            }
+            else
+            {
+                buffer.removeLine();
+            }
+        }
+
+        buffer.moveCursor(m_pasteCursorY, m_pasteCursorX);
+    }
+    else if (m_yankType == BLOCK_YANK)
+    {
+        int lowerY = std::min(m_initialYankY, m_finalYankY);
+        int upperY = std::max(m_initialYankY, m_finalYankY);
+
+        int minYankX = std::min(m_initialYankX, m_finalYankX);
+        int maxYankX = std::max(m_initialYankX, m_finalYankX);
+
+        int tempExtraLines = m_extraLinesInserted;
+
+        for (int i = upperY; i >= lowerY; i--)
+        {
+            if (tempExtraLines != 0)
+            {
+                buffer.moveCursor(m_pasteCursorY + i - lowerY, 0);
+                buffer.removeLine();
+
+                tempExtraLines--;
+            }
+            else
+            {
+                removeCharactersInRange(minYankX + m_pasteCursorX + 1, m_pasteCursorX + maxYankX + 2, m_pasteCursorY + i - lowerY);
+            }
+        }
+    }
 
     if (m_renderUndo) { m_view->display(); }
 }
@@ -1675,13 +1717,16 @@ bool PasteCommand::execute()
     const size_t numberOfLines = m_buffer->getFileGapBuffer().numberOfLines();
 
     const Clipboard& clipboard = m_editor->clipBoard();
+
+    if (clipboard.numberOfLines() == 0) { return false; }
+
     clipboard.copy(m_yankedLines);
 
 
     const size_t clipBoardNumberOfLines = m_editor->clipBoard().numberOfLines();
-    const YANK_TYPE yankType = clipboard.yankType();
+    m_yankType = clipboard.yankType();
 
-    if (yankType == LINE_YANK)
+    if (m_yankType == LINE_YANK)
     {
         const std::shared_ptr<LineGapBuffer>& firstBufferLine = m_editor->buffer().getLineGapBuffer(0);
 
@@ -1712,7 +1757,7 @@ bool PasteCommand::execute()
             }
         }
     }
-    else if (yankType == VISUAL_YANK)
+    else if (m_yankType == VISUAL_YANK)
     {
         m_editor->buffer().moveCursor(m_pasteCursorY, m_pasteCursorX + 1);
 
@@ -1785,7 +1830,7 @@ bool PasteCommand::execute()
             removeCharactersInRange(insertEnd, m_editor->buffer().getLineGapBuffer(absoluteLastY)->lineSize(), absoluteLastY);
         }
     }
-    else // Block yank
+    else // Block paste
     {
         // All characters are inserted in-place onto preexisting lines
         Buffer& currentBuffer = m_editor->buffer();
@@ -1801,11 +1846,6 @@ bool PasteCommand::execute()
         int lowerY = std::min(m_initialYankY, m_finalYankY);
         int upperY = std::max(m_initialYankY, m_finalYankY);
 
-        int differenceY = m_finalYankY - m_initialYankY;
-
-        int startX = (differenceY >= 0) ? m_initialYankX : m_finalYankX;
-        int endX = (differenceY >= 0) ? m_finalYankX : m_initialYankX;
-
         for (int i = lowerY; i <= upperY; i++)
         {
             currentBuffer.moveCursor(m_pasteCursorY + i - lowerY, 0);
@@ -1814,15 +1854,24 @@ bool PasteCommand::execute()
             if (bufferIndex >= static_cast<int>(currentBuffer.getFileGapBuffer().numberOfLines()))
             {
                 currentBuffer.insertLine(true);
+                m_extraLinesInserted++;
             }
 
             const std::shared_ptr<LineGapBuffer>& bufferLine = currentBuffer.getLineGapBuffer(m_pasteCursorY + i - lowerY);
             const int bufferLineSize = static_cast<int>(bufferLine->lineSize());
 
+            currentBuffer.moveCursor(m_pasteCursorY + i - lowerY, std::min(bufferLineSize, m_pasteCursorX + 1));
+
             // Insert spaces so the pasted block is contiguous
             if (m_pasteCursorX != 0)
             {
-                currentBuffer.moveCursor(m_pasteCursorY + i - lowerY, std::min(bufferLineSize, m_pasteCursorX + 1));
+                for (int j = 0; j < m_pasteCursorX + 1 - bufferLineSize; j++)
+                {
+                    currentBuffer.insertCharacter(' ');
+                }
+            }
+            else if (bufferLineSize != 0)
+            {
                 for (int j = 0; j < m_pasteCursorX + 1 - bufferLineSize; j++)
                 {
                     currentBuffer.insertCharacter(' ');
@@ -1830,23 +1879,26 @@ bool PasteCommand::execute()
             }
 
             // Insert the characters from the block
-            for (int j = startX; j <= std::min(endX, static_cast<int>(m_yankedLines[i - lowerY].lineSize())); j++)
+            for (int j = m_lowerBoundX; j <= std::min(m_upperBoundX, static_cast<int>(m_yankedLines[i - lowerY].lineSize())); j++)
             {
                 const LineGapBuffer& yankedLine = m_yankedLines[i - lowerY];
 
                 if (j >= static_cast<int>(yankedLine.lineSize()))
-                {
-                    currentBuffer.insertCharacter(' ');
-                }
-                else
-                {
-                    currentBuffer.insertCharacter(yankedLine[j]);
-                }
+                    break;
+
+                currentBuffer.insertCharacter(yankedLine[j]);
 
             }
         }
 
-        m_editor->buffer().moveCursor(m_pasteCursorY, m_pasteCursorX + 1);
+        if (m_pasteCursorX == 0)
+        {
+            m_editor->buffer().moveCursor(m_pasteCursorY, m_pasteCursorX);
+        }
+        else
+        {
+            m_editor->buffer().moveCursor(m_pasteCursorY, m_pasteCursorX + 1);
+        }
     }
 
     m_buffer->shiftCursorX(0);
@@ -1901,23 +1953,35 @@ void NormalYankLineCommand::undo() {}
 bool NormalYankLineCommand::execute()
 {
     Clipboard& clipboard = m_editor->clipBoard();
-    const std::pair<int, int>& initialYankPos = m_editor->buffer().getCursorPos();
+    Buffer& buffer = m_editor->buffer();
+    const std::pair<int, int>& initialYankPos = buffer.getCursorPos();
+
+    int additionalLines = 0;
+
+    if (m_direction == 0)
+    {
+        additionalLines += m_repetitions - 1;
+    }
+    else
+    {
+        m_direction *= m_repetitions;
+    }
 
     int lowerBoundY = std::min(initialYankPos.first, initialYankPos.first + m_direction);
-    int upperBoundY = std::max(initialYankPos.first, initialYankPos.first + m_direction);
+    int upperBoundY = std::max(initialYankPos.first, initialYankPos.first + m_direction + additionalLines);
 
     lowerBoundY = std::max(0, lowerBoundY);
-    upperBoundY = std::min(static_cast<int>(m_editor->buffer().getFileGapBuffer().numberOfLines()) - 1, upperBoundY);
+    upperBoundY = std::min(static_cast<int>(buffer.getFileGapBuffer().numberOfLines()) - 1, upperBoundY);
 
     clipboard.lineUpdate();
 
     for (int i = lowerBoundY; i <= upperBoundY; i++)
     {
-        clipboard.add(m_editor->buffer().getLineGapBuffer(i));
+        clipboard.add(buffer.getLineGapBuffer(i));
     }
 
-    m_editor->buffer().setLastYankInitialCursor(std::pair<int, int>(lowerBoundY, initialYankPos.second));
-    m_editor->buffer().setLastYankFinalCursor(std::pair<int, int>(upperBoundY, initialYankPos.second));
+    buffer.setLastYankInitialCursor(std::pair<int, int>(lowerBoundY, initialYankPos.second));
+    buffer.setLastYankFinalCursor(std::pair<int, int>(upperBoundY, initialYankPos.second));
 
     if (m_renderExecute) { m_editor->view().yankHighlightTimer(YANK_HIGHLIGHT_MILLISECONDS, LINE_YANK); }
 
@@ -1930,8 +1994,20 @@ bool JumpCursorYankWordCommand::execute()
 {
     Clipboard& clipboard = m_editor->clipBoard();
     const std::pair<int, int>& initialYankPos = m_editor->buffer().getCursorPos();
+    Buffer& buffer = m_editor->buffer();
 
     int targetX = getXCoordinateFromJumpCode(m_jumpCode);
+
+    for (int i = 1; i < m_repetitions; i++)
+    {
+        buffer.moveCursor(initialYankPos.first, targetX);
+
+        int xPositionBeforeMove = buffer.getCursorPos().second;
+
+        targetX = getXCoordinateFromJumpCode(m_jumpCode);
+
+        if (targetX == xPositionBeforeMove) { break; }
+    }
 
     if (initialYankPos.second == targetX) { return false; }
 
@@ -1940,10 +2016,48 @@ bool JumpCursorYankWordCommand::execute()
 
     clipboard.blockUpdate(lowerBoundX, upperBoundX, initialYankPos.first, initialYankPos.first);
 
-    clipboard.add(m_editor->buffer().getLineGapBuffer(initialYankPos.first));
+    clipboard.add(buffer.getLineGapBuffer(initialYankPos.first));
 
-    m_editor->buffer().setLastYankInitialCursor(std::pair<int, int>(initialYankPos.first, lowerBoundX));
-    m_editor->buffer().setLastYankFinalCursor(std::pair<int, int>(initialYankPos.first, upperBoundX));
+    buffer.setLastYankInitialCursor(std::pair<int, int>(initialYankPos.first, lowerBoundX));
+    buffer.setLastYankFinalCursor(std::pair<int, int>(initialYankPos.first, upperBoundX));
+
+    buffer.moveCursor(initialYankPos.first, initialYankPos.second);
+
+    if (m_renderExecute) { m_editor->view().yankHighlightTimer(YANK_HIGHLIGHT_MILLISECONDS, BLOCK_YANK); }
+
+    return false;
+}
+
+void JumpCursorYankEndlineCommand::redo() {}
+void JumpCursorYankEndlineCommand::undo() {}
+bool JumpCursorYankEndlineCommand::execute()
+{
+    Clipboard& clipboard = m_editor->clipBoard();
+    const std::pair<int, int>& initialYankPos = m_editor->buffer().getCursorPos();
+    Buffer& buffer = m_editor->buffer();
+
+    int targetX;
+
+    if (m_right)
+    {
+        targetX = std::max(0, static_cast<int>(buffer.getLineGapBuffer(initialYankPos.first)->lineSize()) - 1);
+    }
+    else
+    {
+        targetX = 0;
+    }
+
+    int lowerBoundX = std::min(initialYankPos.second, targetX);
+    int upperBoundX = std::max(initialYankPos.second, targetX);
+
+    clipboard.blockUpdate(lowerBoundX, upperBoundX, initialYankPos.first, initialYankPos.first);
+
+    clipboard.add(buffer.getLineGapBuffer(initialYankPos.first));
+
+    buffer.setLastYankInitialCursor(std::pair<int, int>(initialYankPos.first, lowerBoundX));
+    buffer.setLastYankFinalCursor(std::pair<int, int>(initialYankPos.first, upperBoundX));
+
+    buffer.moveCursor(initialYankPos.first, initialYankPos.second);
 
     if (m_renderExecute) { m_editor->view().yankHighlightTimer(YANK_HIGHLIGHT_MILLISECONDS, BLOCK_YANK); }
 
