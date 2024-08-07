@@ -531,10 +531,15 @@ private:
 
     bool m_insertingOnOnlyEmptyLine = false;
 
+    std::vector<char> m_visualRestOfLineAfterCursor;
+
     int m_extraLinesInserted = 0;
+    std::vector<std::pair<int, int>> m_extraSpacesInserted;
+    bool m_pastedOnEmptyLineAtZero = false;
 
     std::vector<LineGapBuffer> m_yankedLines;
     YANK_TYPE m_yankType = YANK_TYPE::LINE_YANK;
+
 
     void redo() override;
     void undo() override;

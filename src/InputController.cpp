@@ -794,6 +794,27 @@ void InputController::handleVisualModes(int input)
                     exit(1);
             }
             break;
+        case c:
+            switch (currentMode)
+            {
+                case VISUAL_LINE_MODE:
+                    m_editor->commandQueue().execute<RemoveLinesVisualLineModeCommand>(false, 1);
+                    m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+                    break;
+                case VISUAL_MODE:
+                    m_editor->commandQueue().execute<RemoveLinesVisualModeCommand>(false, 1);
+                    m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+                    break;
+                case VISUAL_BLOCK_MODE:
+                    m_editor->commandQueue().execute<RemoveLinesVisualBlockModeCommand>(false, 1);
+                    m_editor->commandQueue().execute<SetModeCommand>(false, 1, INSERT_MODE, 0);
+                    break;
+                default:
+                    endwin();
+                    std::cerr << "Unexpected mode: " << currentMode << '\n';
+                    exit(1);
+            }
+            break;
         case LESS_THAN_SIGN:
         {
             int repetition = repetitionCount();
