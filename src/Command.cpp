@@ -2357,3 +2357,224 @@ bool QuickVerticalMovementCommand::execute()
 
     return false;
 }
+
+void ToggleCommentLineCommand::redo()
+{
+    Buffer& buffer = m_editor->buffer();
+
+    if (m_commentedLine)
+    {
+        buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+
+        buffer.insertCharacter('/');
+        buffer.insertCharacter('/');
+        buffer.insertCharacter(' ');
+    }
+    else
+    {
+        buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+
+        for (int i = 0; i < 3; i++)
+            buffer.removeCharacter(false);
+    }
+
+    buffer.moveCursor(m_cursorY, m_cursorX);
+
+    if (m_renderExecute) { m_editor->view().display(); }
+}
+void ToggleCommentLineCommand::undo()
+{
+    Buffer& buffer = m_editor->buffer();
+
+    if (m_commentedLine)
+    {
+        buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+
+        for (int i = 0; i < 3; i++)
+            buffer.removeCharacter(false);
+    }
+    else
+    {
+        buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+
+        buffer.insertCharacter('/');
+        buffer.insertCharacter('/');
+        buffer.insertCharacter(' ');
+
+    }
+
+    buffer.moveCursor(m_cursorY, m_cursorX);
+
+    if (m_renderUndo) { m_editor->view().display(); }
+
+}
+bool ToggleCommentLineCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_cursorY = cursorPos.first;
+    m_cursorX = cursorPos.second;
+
+    Buffer& buffer = m_editor->buffer();
+
+    const std::shared_ptr<LineGapBuffer>& line = buffer.getLineGapBuffer(m_cursorY);
+
+    if (line->lineSize() == 0)
+    {
+        m_commentedLine = true;
+
+        buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+        buffer.insertCharacter('/');
+        buffer.insertCharacter('/');
+        buffer.insertCharacter(' ');
+    }
+    else
+    {
+        m_indexOfFirstNonSpaceCharacter = buffer.indexOfFirstNonSpaceCharacter(line);
+
+        char firstCharacter = line->at(m_indexOfFirstNonSpaceCharacter);
+
+        if (firstCharacter != '/')
+        {
+            if (m_indexOfFirstNonSpaceCharacter + 1 < static_cast<int>(line->lineSize()) && line->at(m_indexOfFirstNonSpaceCharacter + 1))
+            {
+                buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+                buffer.insertCharacter('/');
+                buffer.insertCharacter('/');
+                buffer.insertCharacter(' ');
+            }
+
+            m_commentedLine = true;
+        }
+        else
+        {
+            buffer.moveCursor(m_cursorY, m_indexOfFirstNonSpaceCharacter);
+
+            for (int i = 0; i < 3; i++)
+                buffer.removeCharacter(false);
+
+            m_commentedLine = false;
+        }
+    }
+
+
+    buffer.moveCursor(m_cursorY, m_cursorX);
+
+    if (m_renderExecute) { m_editor->view().display(); }
+
+    return true;
+}
+
+void ToggleCommentLinesVisualCommand::redo()
+{
+    Buffer& buffer = m_editor->buffer();
+
+    for (int row = m_lowerY; row <= m_upperY; row++)
+    {
+        buffer.moveCursor(row, m_indicesOfFirstNonSpaceCharacters[row - m_lowerY]);
+
+        if (m_commentLines)
+        {
+            buffer.insertCharacter('/');
+            buffer.insertCharacter('/');
+            buffer.insertCharacter(' ');
+        }
+        else
+        {
+            buffer.removeCharacter(false);
+            buffer.removeCharacter(false);
+            buffer.removeCharacter(false);
+        }
+    }
+
+    buffer.moveCursor(m_finalY, m_finalX);
+
+    if (m_renderExecute) { m_editor->view().display(); }
+}
+void ToggleCommentLinesVisualCommand::undo()
+{
+    Buffer& buffer = m_editor->buffer();
+
+    for (int row = m_lowerY; row <= m_upperY; row++)
+    {
+        buffer.moveCursor(row, m_indicesOfFirstNonSpaceCharacters[row - m_lowerY]);
+
+        if (m_commentLines)
+        {
+            buffer.removeCharacter(false);
+            buffer.removeCharacter(false);
+            buffer.removeCharacter(false);
+        }
+        else
+        {
+            buffer.insertCharacter('/');
+            buffer.insertCharacter('/');
+            buffer.insertCharacter(' ');
+        }
+    }
+
+    buffer.moveCursor(m_finalY, m_finalX);
+
+    if (m_renderUndo) { m_editor->view().display(); }
+}
+bool ToggleCommentLinesVisualCommand::execute()
+{
+    const std::pair<int, int>& cursorPos = m_buffer->getCursorPos();
+    m_finalX = cursorPos.second;
+    m_finalY = cursorPos.first;
+    const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
+
+    m_lowerY = std::min(cursorPos.first, previousVisualPos.first);
+    m_upperY = std::max(cursorPos.first, previousVisualPos.first);
+
+    Buffer& buffer = m_editor->buffer();
+
+    // Search through all lines to find a comment, if comment -> uncomment
+    m_indicesOfFirstNonSpaceCharacters.reserve(m_upperY - m_lowerY);
+
+    for (int row = m_lowerY; row <= m_upperY; row++)
+    {
+        const std::shared_ptr<LineGapBuffer>& line = buffer.getLineGapBuffer(row);
+        m_indicesOfFirstNonSpaceCharacters.push_back(buffer.indexOfFirstNonSpaceCharacter(line));
+
+        if (!m_commentLines && line->lineSize() == 0)
+        {
+            m_commentLines = true;
+        }
+
+        if (!m_commentLines && line->at(m_indicesOfFirstNonSpaceCharacters[row - m_lowerY]) != '/')
+        {
+            int newIndex = m_indicesOfFirstNonSpaceCharacters[row - m_lowerY] + 1;
+
+            if (newIndex < static_cast<int>(line->lineSize()) && line->at(newIndex) != '/')
+            {
+                m_commentLines = true;
+            }
+        }
+    }
+
+    for (int row = m_lowerY; row <= m_upperY; row++)
+    {
+        buffer.moveCursor(row, m_indicesOfFirstNonSpaceCharacters[row - m_lowerY]);
+
+        if (m_commentLines)
+        {
+
+            buffer.insertCharacter('/');
+            buffer.insertCharacter('/');
+            buffer.insertCharacter(' ');
+        }
+        else
+        {
+            buffer.removeCharacter(false);
+            buffer.removeCharacter(false);
+            buffer.removeCharacter(false);
+        }
+    }
+
+    buffer.moveCursor(m_finalY, m_finalX);
+
+    if (m_renderExecute) { m_editor->view().display(); }
+
+    return true;
+}
+

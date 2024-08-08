@@ -284,6 +284,9 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<SetModeCommand>(false, 1, VISUAL_BLOCK_MODE, 0);
             break;
         }
+        case t:
+            m_editor->commandQueue().execute<ToggleCommentLineCommand>(false, 1);
+            break;
         default:
         {
             if (input >= '0' && input <= '9')
@@ -873,6 +876,9 @@ void InputController::handleVisualModes(int input)
             break;
         case G:
             m_editor->commandQueue().execute<CursorFullBottomCommand>(false, 1);
+            break;
+        case t:
+            m_editor->commandQueue().execute<ToggleCommentLinesVisualCommand>(false, 1);
             break;
     }
 }

@@ -621,3 +621,44 @@ public:
     QuickVerticalMovementCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool down)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_down(down) {}
 };
+
+class ToggleCommentLineCommand : public Command
+{
+private:
+    int m_cursorY = 0;
+    int m_cursorX = 0;
+
+    int m_indexOfFirstNonSpaceCharacter = 0;
+
+    bool m_commentedLine = true;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    ToggleCommentLineCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
+
+class ToggleCommentLinesVisualCommand : public Command
+{
+private:
+    int m_lowerY = 0;
+    int m_upperY = 0;
+
+    int m_finalY = 0;
+    int m_finalX = 0;
+
+    std::vector<int> m_indicesOfFirstNonSpaceCharacters;
+
+    bool m_commentLines = false;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    ToggleCommentLinesVisualCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
+};
