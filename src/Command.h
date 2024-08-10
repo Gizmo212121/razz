@@ -2,6 +2,7 @@
 
 #include "Includes.h"
 #include "LineGapBuffer.h"
+#include <climits>
 
 class Editor;
 class Buffer;
@@ -650,7 +651,10 @@ private:
     int m_finalY = 0;
     int m_finalX = 0;
 
-    std::vector<int> m_indicesOfFirstNonSpaceCharacters;
+    int m_smallestIndexOfFirstNonSpaceCharacter = INT_MAX;
+
+    std::vector<std::pair<int, int>> m_indicesOfFirstCharacters;
+    std::vector<int> m_indicesOfCommentsWithNoSpaceAfterSlashes;
 
     bool m_commentLines = false;
 

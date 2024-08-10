@@ -106,7 +106,8 @@ char LineGapBuffer::operator[](size_t index) const
         std::cout << "Num characters: " << lineSize() << "\n\t";
         std::cout << "Pre index: " << preGapIndex() << "\n\t";
         std::cout << "Post index: " << postGapIndex() << "\n";
-        exit(1);
+
+        abort();
     }
 
     if (index < m_preGapIndex)
@@ -136,7 +137,8 @@ char LineGapBuffer::at(size_t index) const
         std::cout << "Num characters: " << lineSize() << "\n\t";
         std::cout << "Pre index: " << preGapIndex() << "\n\t";
         std::cout << "Post index: " << postGapIndex() << "\n";
-        exit(1);
+
+        abort();
     }
 
     if (index < m_preGapIndex)

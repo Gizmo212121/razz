@@ -3,15 +3,56 @@
 #include "Editor.h"
 #include "Command.h"
 #include "Includes.h"
-#include <cstdlib>
-#include <ncurses.h>
-#include <string>
+#include <random>
 
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
 {
     m_editor->commandQueue().execute<InsertCharacterCommand>(true, 1, ' ');
     m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(true, 1, true);
+
+    // m_keys = {
+    //     CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
+    //     LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, D, E, F,
+    //     G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, c, d, e, f, g, h, i, j, k, n,
+    //     o, p, q, r, s, t, u, v, w, x, y, LEFT_BRACE, BACKSPACE };
+
+    m_keys = {
+        CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
+        LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, E, F,
+        G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, e, f, g, h, i, j, k, n,
+        o, p, q, r, s, t, u, v, w, x, LEFT_BRACE, BACKSPACE };
+
+    // m_keys = {
+    //     CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
+    //     LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, D, E, F,
+    //     G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, c, d, e, f, g, h, i, j, k, n,
+    //     o, p, q, r, s, t, u, v, w, x, LEFT_BRACE, BACKSPACE };
+
+    // std::random_device rd;
+
+    // unsigned int seed = rd();
+
+    m_distribution = std::uniform_int_distribution<int>(0, static_cast<int>(m_keys.size()));
+
+    m_numberGenerator.seed(m_seed);
+}
+
+int InputController::getRandomKey() const
+{
+    int index = m_distribution(m_numberGenerator);
+
+    MODE currentMode = m_editor->mode();
+
+    do
+    {
+        index = m_distribution(m_numberGenerator);
+    }
+    while (currentMode == INSERT_MODE &&
+             (m_keys[index] != CTRL_C && (m_keys[index] < 32 || m_keys[index] > 126)));
+
+
+    return m_keys[index];
 }
 
 int InputController::repetitionCount()
@@ -25,7 +66,16 @@ int InputController::repetitionCount()
 
 void InputController::handleInput()
 {
-    int input = getch();
+    int input = 0;
+
+    if (m_numberOfRandomInputs-- <= 0)
+    {
+        input = getch();
+    }
+    else
+    {
+        input = getRandomKey();
+    }
 
     // Global input
     switch (input)
@@ -301,9 +351,9 @@ void InputController::handleNormalModeInput(int input)
             }
             else
             {
-                clear();
-                move(0, 0);
-                printw("You printed: %c with integer code: %d", input, input);
+                // clear();
+                // move(0, 0);
+                // printw("You printed: %c with integer code: %d", input, input);
             }
 
             break;
@@ -700,7 +750,7 @@ void InputController::displayErrorMessage(const std::string& message)
 
     m_editor->view().displayCommandBuffer(COLOR_PAIR(ERROR_MESSAGE_PAIR));
 
-    getch();
+    // getch();
 }
 
 void InputController::handleVisualModes(int input)

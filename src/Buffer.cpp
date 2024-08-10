@@ -336,6 +336,7 @@ int Buffer::beginningNextWordIndex()
 {
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
     if (lineGapBuffer->lineSize() == 0) { return m_cursorX; }
+    else if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
     char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
@@ -375,6 +376,7 @@ int Buffer::beginningNextSymbolIndex()
 {
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
     if (lineGapBuffer->lineSize() == 0) { return m_cursorX; }
+    else if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
     char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
@@ -415,6 +417,7 @@ int Buffer::endNextWordIndex()
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
     size_t lineSize = lineGapBuffer->lineSize();
     if (lineSize == 0) { return m_cursorX; }
+    else if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
     char currentCharacter = m_file[m_cursorY]->at(std::min(m_cursorX + 1, static_cast<int>(lineSize) - 1));
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
@@ -469,6 +472,7 @@ int Buffer::endNextSymbolIndex()
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
     size_t lineSize = lineGapBuffer->lineSize();
     if (lineSize == 0) { return m_cursorX; }
+    else if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
     char currentCharacter = m_file[m_cursorY]->at(std::min(m_cursorX + 1, static_cast<int>(lineSize) - 1));
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter) && currentCharacter != ' ';
@@ -521,6 +525,7 @@ int Buffer::endPreviousWordIndex()
 {
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
     if (lineGapBuffer->lineSize() == 0) { return m_cursorX; }
+    else if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
     char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
     bool foundSpaceOrSymbol = false;
@@ -561,6 +566,7 @@ int Buffer::endPreviousSymbolIndex()
 {
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
     if (lineGapBuffer->lineSize() == 0) { return m_cursorX; }
+    else if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
     char currentCharacter = m_file[m_cursorY]->at(m_cursorX);
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
@@ -603,6 +609,7 @@ int Buffer::beginningPreviousWordIndex()
     if (m_cursorX == 0) { return m_cursorX; }
 
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
+    if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
     char currentCharacter = m_file[m_cursorY]->at(std::max(0, m_cursorX - 1));
     bool currentCharacterSymbolic = isCharacterSymbolic(currentCharacter);
@@ -658,6 +665,7 @@ int Buffer::beginningPreviousSymbolIndex()
     if (m_cursorX == 0) { return m_cursorX; }
 
     const std::shared_ptr<LineGapBuffer>& lineGapBuffer = m_file[m_cursorY];
+    if (static_cast<int>(lineGapBuffer->lineSize()) == m_cursorX - 1) { return m_cursorX - 1; }
 
 
     char currentCharacter = m_file[m_cursorY]->at(std::max(m_cursorX - 1, 0));

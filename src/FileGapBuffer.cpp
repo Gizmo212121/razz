@@ -37,7 +37,8 @@ void FileGapBuffer::insertLine(const std::shared_ptr<LineGapBuffer>& line)
     else if (m_preGapIndex > m_postGapIndex)
     {
         std::cerr << "Pre gap index bugger than post gap index!\n";
-        exit(1);
+
+        abort();
     }
 
     m_buffer[m_preGapIndex] = std::move(line);
@@ -89,7 +90,8 @@ const std::shared_ptr<LineGapBuffer>& FileGapBuffer::operator [](size_t index) c
         std::cout << "Num lines: " << numberOfLines() << "\n\t";
         std::cout << "Pre index: " << preGapIndex() << "\n\t";
         std::cout << "Post index: " << postGapIndex() << "\n";
-        exit(1);
+
+        abort();
     }
 
     if (index < m_preGapIndex)

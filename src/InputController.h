@@ -2,6 +2,7 @@
 
 #include "Command.h"
 #include "CircularBuffer.h"
+#include <random>
 
 class Editor;
 
@@ -26,6 +27,19 @@ private:
     CircularBuffer m_circularInputBuffer;
 
     std::pair<int, int> m_cursorPosOnVisualMode;
+
+
+    std::vector<int> m_keys;
+    int getRandomKey() const;
+    std::random_device m_randomDevice;
+    mutable std::mt19937 m_numberGenerator;
+    mutable std::uniform_int_distribution<int> m_distribution;
+    // int m_numberOfRandomInputs = 2602;
+    int m_numberOfRandomInputs = 5000;
+    // int m_numberOfRandomInputs = 0;
+
+    unsigned int m_seed = 121;
+
 
     void handleNormalModeInput(int input);
     void handleCommandModeInput(int input);

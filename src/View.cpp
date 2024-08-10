@@ -96,7 +96,7 @@ void View::display()
 {
     std::lock_guard<std::mutex> lock(displayMutex);
 
-    Timer timer("display");
+    // Timer timer("display");
 
 
     const FileGapBuffer& fileGapBuffer = m_buffer->getFileGapBuffer();

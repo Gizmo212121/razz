@@ -22,6 +22,10 @@
 #include <atomic>
 #include <mutex>
 
+#include <random>
+
+#include <limits>
+
 #include "Timer.h"
 
 enum MODE
@@ -392,6 +396,6 @@ const int JUMP_FORWARD = 0b001;
 const int JUMP_BY_WORD = 0b010;
 const int JUMP_TO_END = 0b100;
 
-const int MAX_REPETITION_COUNT = 50000;
+const int MAX_REPETITION_COUNT = 100000;
 
 const size_t INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE = 10;
