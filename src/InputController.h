@@ -34,11 +34,23 @@ private:
     std::random_device m_randomDevice;
     mutable std::mt19937 m_numberGenerator;
     mutable std::uniform_int_distribution<int> m_distribution;
-    // int m_numberOfRandomInputs = 2602;
-    int m_numberOfRandomInputs = 5000;
-    // int m_numberOfRandomInputs = 0;
 
-    unsigned int m_seed = 121;
+    // ???? smth happen here
+    // unsigned int m_seed = 129;
+    // int m_numberOfRandomInputs = 2462;
+    // int m_numberOfRandomInputs = 2463;
+
+
+
+
+    // Bug in between these two spots
+    // int m_numberOfRandomInputs = 10000;
+    int m_numberOfRandomInputs = 7500;
+
+
+    int m_numberOfInputRepetitions = 0;
+    int m_lastInput = 0;
+    unsigned int m_seed = 159;
 
 
     void handleNormalModeInput(int input);

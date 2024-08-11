@@ -395,6 +395,9 @@ private:
 
     std::vector<std::shared_ptr<LineGapBuffer>> m_lines;
 
+    size_t m_linesBeforeDeletion = 0;
+    bool m_insertingOnEmptyFile = false;
+
     void redo() override;
     void undo() override;
     bool execute() override;
@@ -415,6 +418,8 @@ private:
     int m_upperBoundY = 0;
     int m_lowerBoundX = 0;
     int m_upperBoundX = 0;
+
+    bool m_removedFirstLine = false;
 
     std::vector<char> m_lowerBoundCharacters;
     std::vector<std::shared_ptr<LineGapBuffer>> m_intermediaryLines;

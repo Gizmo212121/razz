@@ -20,8 +20,8 @@ InputController::InputController(Editor* editor)
     m_keys = {
         CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
         LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, E, F,
-        G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, e, f, g, h, i, j, k, n,
-        o, p, q, r, s, t, u, v, w, x, LEFT_BRACE, BACKSPACE };
+        G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, d, d, e, f, g, h, i, j, n,
+        o, p, q, r, s, t, u, v, w, x, LEFT_BRACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE };
 
     // m_keys = {
     //     CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
@@ -74,7 +74,17 @@ void InputController::handleInput()
     }
     else
     {
-        input = getRandomKey();
+        if (m_numberOfInputRepetitions <= 0)
+        {
+            input = getRandomKey();
+            m_lastInput = input;
+            m_numberOfInputRepetitions = 0;
+        }
+        else
+        {
+            input = m_lastInput;
+            m_numberOfInputRepetitions--;
+        }
     }
 
     // Global input
