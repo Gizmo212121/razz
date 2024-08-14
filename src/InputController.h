@@ -35,22 +35,15 @@ private:
     mutable std::mt19937 m_numberGenerator;
     mutable std::uniform_int_distribution<int> m_distribution;
 
-    // ???? smth happen here
-    // unsigned int m_seed = 129;
-    // int m_numberOfRandomInputs = 2462;
-    // int m_numberOfRandomInputs = 2463;
 
-
-
-
-    // Bug in between these two spots
-    // int m_numberOfRandomInputs = 10000;
-    int m_numberOfRandomInputs = 7500;
+    // int m_numberOfRandomInputs = 3591;
+    int m_numberOfRandomInputs = 3590;
 
 
     int m_numberOfInputRepetitions = 0;
     int m_lastInput = 0;
-    unsigned int m_seed = 159;
+    unsigned int m_seed = 247;
+    int m_numberOfInsertModeInserts = 5;
 
 
     void handleNormalModeInput(int input);
@@ -82,4 +75,7 @@ public:
     const std::string& commandBuffer() const { return m_commandBuffer; }
     const CircularBuffer& circularBuffer() const { return m_circularInputBuffer; }
     const std::pair<int, int>& initialVisualModeCursor() const { return m_cursorPosOnVisualMode; }
+
+    // Setters
+    void setInitialVisualModeCursorX(const int x) { m_cursorPosOnVisualMode.second = x; }
 };

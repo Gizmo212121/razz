@@ -82,14 +82,16 @@ public:
 class MoveCursorYCommand : public Command
 {
 private:
-    int deltaY = 0;
+    std::pair<int, int> m_cursorPos = {0, 0};
+    int m_numberOfDeletedSpaces = 0;
+    int m_deltaY = 0;
 
     void redo() override;
     void undo() override;
     bool execute() override;
 public:
     MoveCursorYCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, int y)
-        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), deltaY(y) {}
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_deltaY(y) {}
 };
 
 class UndoCommand : public Command

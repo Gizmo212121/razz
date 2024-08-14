@@ -23,13 +23,13 @@ void View::yankHighlight(int milliseconds)
 {
     m_displayHighlight.store(true);
 
-    display();
+    // display();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 
     m_displayHighlight.store(false);
 
-    display();
+    // display();
 }
 
 void View::adjustLinesAfterScrolling(int relativeCursorPosY, int upperLineMoveThreshold, int lowerLineMoveThreshold)

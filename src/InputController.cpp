@@ -3,7 +3,6 @@
 #include "Editor.h"
 #include "Command.h"
 #include "Includes.h"
-#include <random>
 
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
@@ -11,23 +10,12 @@ InputController::InputController(Editor* editor)
     m_editor->commandQueue().execute<InsertCharacterCommand>(true, 1, ' ');
     m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(true, 1, true);
 
-    // m_keys = {
-    //     CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
-    //     LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, D, E, F,
-    //     G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, c, d, e, f, g, h, i, j, k, n,
-    //     o, p, q, r, s, t, u, v, w, x, y, LEFT_BRACE, BACKSPACE };
-
     m_keys = {
         CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
-        LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, E, F,
-        G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, d, d, e, f, g, h, i, j, n,
-        o, p, q, r, s, t, u, v, w, x, LEFT_BRACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE };
+        LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, D, E, F,
+        G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, d, d, e, f, g, h, i, j, k, k, k, k, k, n,
+        o, p, q, r, s, t, u, v, w, x, y, LEFT_BRACE, BACKSPACE };
 
-    // m_keys = {
-    //     CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
-    //     LEFT_PARENTHESIS, COMMA, SEMICOLON, LESS_THAN_SIGN, GREATER_THAN_SIGN, A, B, C, D, E, F,
-    //     G, H, I, J, N, O, P, Q, R, S, T, U, V, W, X, LEFT_BRACKET, a, b, c, d, e, f, g, h, i, j, k, n,
-    //     o, p, q, r, s, t, u, v, w, x, LEFT_BRACE, BACKSPACE };
 
     // std::random_device rd;
 
@@ -70,21 +58,48 @@ void InputController::handleInput()
 
     if (m_numberOfRandomInputs-- <= 0)
     {
+        // endwin();
+        // std::cout << "Last input: " << m_lastInput << '\n';
+        // exit(1);
         input = getch();
     }
     else
     {
-        if (m_numberOfInputRepetitions <= 0)
+        if (m_editor->mode() == INSERT_MODE)
         {
-            input = getRandomKey();
-            m_lastInput = input;
-            m_numberOfInputRepetitions = 0;
+            if (m_numberOfInsertModeInserts > 0)
+            {
+                input = getRandomKey();
+                m_lastInput = input;
+
+                m_numberOfInsertModeInserts--;
+            }
+            else
+            {
+                input = CTRL_C;
+                m_lastInput = input;
+
+                m_numberOfInsertModeInserts = 5;
+            }
         }
         else
         {
-            input = m_lastInput;
-            m_numberOfInputRepetitions--;
+            input = getRandomKey();
+            m_lastInput = input;
         }
+
+
+        // if (m_numberOfInputRepetitions <= 0)
+        // {
+        //     input = getRandomKey();
+        //     m_lastInput = input;
+        //     m_numberOfInputRepetitions = 0;
+        // }
+        // else
+        // {
+        //     input = m_lastInput;
+        //     m_numberOfInputRepetitions--;
+        // }
     }
 
     // Global input
@@ -185,10 +200,10 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, -1 * repetitionCount());
             break;
         case i:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, 1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorYCommand>(true, 1, 1 * repetitionCount());
             break;
         case p:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, -1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorYCommand>(true, 1, -1 * repetitionCount());
             break;
         case APOSTROPHE:
             m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, 1 * repetitionCount());
@@ -472,9 +487,11 @@ void InputController::handleInsertModeInput(int input)
             break;
         }
         default:
+        if (input >= 32 && input <= 126)
+        {
             m_editor->commandQueue().execute<InsertCharacterCommand>(true, 1, input);
             break;
-
+        }
     }
 }
 
