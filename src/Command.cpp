@@ -1171,14 +1171,8 @@ void RemoveLinesVisualLineModeCommand::redo()
         m_lines[i] = m_buffer->removeLine();
     }
 
-    if (m_initialY >= m_upperBoundY)
-    {
-        m_buffer->moveCursor(m_initialY + m_lowerBoundY - m_upperBoundY, m_initialX);
-    }
-    else
-    {
-        m_buffer->moveCursor(m_initialY, m_initialX);
-    }
+    int finalX = std::min(m_initialX, static_cast<int>(m_buffer->getLineGapBuffer(m_lowerBoundY)->lineSize()) - 1);
+    m_buffer->moveCursor(m_lowerBoundY, finalX);
 
     m_buffer->shiftCursorX(0);
 
@@ -1235,8 +1229,8 @@ bool RemoveLinesVisualLineModeCommand::execute()
 
     m_insertingOnEmptyFile = (static_cast<int>(m_linesBeforeDeletion) == m_upperBoundY - m_lowerBoundY + 1);
 
-    m_buffer->moveCursor(m_lowerBoundY, m_initialX);
-    m_buffer->shiftCursorX(0);
+    int finalX = std::min(m_initialX, static_cast<int>(m_buffer->getLineGapBuffer(m_lowerBoundY)->lineSize()) - 1);
+    m_buffer->moveCursor(m_lowerBoundY, finalX);
 
     m_editor->setMode(NORMAL_MODE);
 
