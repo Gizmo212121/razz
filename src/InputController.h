@@ -37,12 +37,13 @@ private:
 
 
     // int m_numberOfRandomInputs = 0;
-    int m_numberOfRandomInputs = 1000;
+    // int m_numberOfRandomInputs = 1000;
+    int m_numberOfRandomInputs = 0;
 
 
     int m_numberOfInputRepetitions = 0;
     int m_lastInput = 0;
-    unsigned int m_seed = 257;
+    unsigned int m_seed = 258;
     int m_numberOfInsertModeInserts = 5;
 
 

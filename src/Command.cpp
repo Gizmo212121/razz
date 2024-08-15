@@ -581,15 +581,18 @@ bool RemoveCharacterInsertCommand::execute()
         {
             int index = std::min(static_cast<int>(lineGapBuffer->lineSize()) - 1, m_x - 1);
 
-            char nextChar = lineGapBuffer->at(index);
-
-            if (isMatchingPair(m_character, nextChar))
+            if (index >= 0)
             {
-                m_autoDeletedPair = true;
+                char nextChar = lineGapBuffer->at(index);
 
-                m_buffer->removeCharacter(false);
+                if (isMatchingPair(m_character, nextChar))
+                {
+                    m_autoDeletedPair = true;
 
-                m_buffer->moveCursor(m_y, m_x - 1);
+                    m_buffer->removeCharacter(false);
+
+                    m_buffer->moveCursor(m_y, m_x - 1);
+                }
             }
         }
 
@@ -2229,6 +2232,8 @@ bool PasteCommand::execute()
         // If there's only one line and it's empty, we don't want to append anything, just insert characters onto the first line.
         if (numberOfLines == 1 && firstBufferLine->lineSize() == 0)
         {
+            endwin();
+            exit(1);
             m_insertingOnOnlyEmptyLine = true; 
 
             const LineGapBuffer& firstClipboardLine = m_yankedLines[0];

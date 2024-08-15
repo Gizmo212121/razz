@@ -7,8 +7,9 @@
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
 {
-    m_editor->commandQueue().execute<InsertCharacterCommand>(false, 1, ' ');
-    m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(false, 1, true);
+    // m_editor->commandQueue().execute<InsertCharacterCommand>(false, 1, ' ');
+    // m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(false, 1, true);
+
 
     m_keys = {
         CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,

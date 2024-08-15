@@ -6,7 +6,7 @@ void CommandQueue::undo()
 {
     try
     {
-        if (m_currentCommandCount <= 2) // Temp fix here for the bullshit error happening with character-deleting in a new buffer.
+        if (m_currentCommandCount <= 0) // Temp fix here for the bullshit error happening with character-deleting in a new buffer.
         {
             // std::cout << "Already at oldest change!\n";
             // TODO: Send signal to command buffer. Maybe have this function return a bool to say if it worked or not? Then we can contextualize the return statement, giving a proper warning
