@@ -42,13 +42,13 @@ void CommandQueue::undo()
     {
         endwin();
         std::cerr << "Out of range error: " << e.what() << '\n';
-        exit(1);
+        abort();
     }
     catch (const std::exception& e)
     {
         endwin();
         std::cerr << "Exception: " << e.what() << '\n';
-        exit(1);
+        abort();
     }
 }
 

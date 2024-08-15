@@ -36,16 +36,13 @@ private:
     mutable std::uniform_int_distribution<int> m_distribution;
 
 
-    // int m_numberOfRandomInputs = 3383;
-    // int m_numberOfRandomInputs = 3380;
-    // int m_numberOfRandomInputs = 3402;
-    int m_numberOfRandomInputs = 0;
-
+    // int m_numberOfRandomInputs = 0;
+    int m_numberOfRandomInputs = 1000;
 
 
     int m_numberOfInputRepetitions = 0;
     int m_lastInput = 0;
-    unsigned int m_seed = 248;
+    unsigned int m_seed = 257;
     int m_numberOfInsertModeInserts = 5;
 
 

@@ -66,8 +66,8 @@ public:
                 else
                 {
                     command = std::make_unique<CommandType>(
-                            m_editor, m_buffer, m_view, m_commandQueue, true, false,
-                            // m_editor, m_buffer, m_view, m_commandQueue, true, true,
+                            // m_editor, m_buffer, m_view, m_commandQueue, true, false,
+                            m_editor, m_buffer, m_view, m_commandQueue, true, true,
                             std::forward<CommandArgs>(commandArgs)...);
 
                     m_commands[m_currentCommandCount - 1]->m_renderExecute = false;

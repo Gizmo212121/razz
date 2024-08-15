@@ -2094,7 +2094,7 @@ void PasteCommand::undo()
 
             if (m_yankedLines[m_yankedLines.size() - 1].lineSize() == 0)
             {
-                buffer.moveCursor(m_pasteCursorY + m_yankedLines.size() - 1, 0);
+                buffer.moveCursor(m_pasteCursorY + 1, 0);
                 buffer.removeLine();
             }
         }
