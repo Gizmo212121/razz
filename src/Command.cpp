@@ -1981,14 +1981,7 @@ void PasteCommand::undo()
 
         for (size_t i = 0; i < m_yankedLines.size(); i++)
         {
-            if (m_insertingOnOnlyEmptyLine && i == 0)
-            {
-                removeCharactersInRange(0, m_yankedLines[0].lineSize(), m_pasteCursorY);
-            }
-            else
-            {
-                buffer.removeLine();
-            }
+            buffer.removeLine();
         }
 
         buffer.moveCursor(m_pasteCursorY, m_pasteCursorX);
@@ -2232,8 +2225,6 @@ bool PasteCommand::execute()
         // If there's only one line and it's empty, we don't want to append anything, just insert characters onto the first line.
         if (numberOfLines == 1 && firstBufferLine->lineSize() == 0)
         {
-            endwin();
-            exit(1);
             m_insertingOnOnlyEmptyLine = true; 
 
             const LineGapBuffer& firstClipboardLine = m_yankedLines[0];
@@ -2245,7 +2236,7 @@ bool PasteCommand::execute()
             }
 
             // Append the additional lines
-            for (size_t i = 0; i < clipBoardNumberOfLines - 1; i++)
+            for (size_t i = 1; i < clipBoardNumberOfLines; i++)
             {
                 m_buffer->insertLine(std::make_shared<LineGapBuffer>(m_yankedLines[i]), true);
             }
