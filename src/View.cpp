@@ -352,7 +352,7 @@ int View::printLine(const std::shared_ptr<LineGapBuffer>& lineGapBuffer, int row
         {
             const std::pair<int, int>& previousVisualPos = m_editor->inputController().initialVisualModeCursor();
 
-            if (row + extraLinesFromWrapping + m_linesDown >= std::min(previousVisualPos.first, cursorPos.first) && row + extraLinesFromWrapping + m_linesDown <= std::max(previousVisualPos.first, cursorPos.first))
+            if (row + m_linesDown >= std::min(previousVisualPos.first, cursorPos.first) && row + m_linesDown <= std::max(previousVisualPos.first, cursorPos.first))
             {
                 attron(COLOR_PAIR(VISUAL_HIGHLIGHT_PAIR));
                 printCharacter(row + extraLinesFromWrapping, m_reservedColumnsForLineNumbering, ' ');
