@@ -57,11 +57,8 @@ void InputController::handleInput()
 {
     int input = 0;
 
-    if (m_numberOfRandomInputs-- <= 0)
+    if (!m_testInput || m_numberOfRandomInputs-- <= 0)
     {
-        // endwin();
-        // std::cout << "Last input: " << m_lastInput << '\n';
-        // exit(1);
         input = getch();
     }
     else

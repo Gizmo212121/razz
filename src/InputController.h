@@ -28,6 +28,9 @@ private:
 
     std::pair<int, int> m_cursorPosOnVisualMode;
 
+// ==============RANDOM INPUT TESTING =================
+
+    const bool m_testInput = false;
 
     std::vector<int> m_keys;
     int getRandomKey() const;
@@ -35,14 +38,14 @@ private:
     mutable std::mt19937 m_numberGenerator;
     mutable std::uniform_int_distribution<int> m_distribution;
 
-
-    int m_numberOfRandomInputs = 1000;
-
+    int m_numberOfRandomInputs = 20000;
 
     int m_numberOfInputRepetitions = 0;
     int m_lastInput = 0;
-    unsigned int m_seed = 265;
+    unsigned int m_seed = 272;
     int m_numberOfInsertModeInserts = 5;
+
+// ====================================================
 
 
     void handleNormalModeInput(int input);

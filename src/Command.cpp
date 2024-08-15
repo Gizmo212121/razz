@@ -567,7 +567,13 @@ bool RemoveCharacterInsertCommand::execute()
 
             for (int i = 1; i < WHITESPACE_PER_TAB; i++)
             {
-                int index = std::max(0, m_x - i - 1);
+                int index = m_x - i - 1;
+
+                if (index < 0)
+                {
+                    break;
+                }
+
                 if (lineGapBuffer->at(index) == ' ')
                 {
                     m_deletedWhitespaces++;
