@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <memory>
 #include <ncurses.h>
-#include <type_traits>
 
 bool Command::isValidLeftPair(char leftPair) const
 {
@@ -1780,9 +1779,23 @@ void PasteCommand::redo()
 
         if (boundDifferenceY == 0)
         {
-            for (int charIndex = m_lowerBoundX; charIndex <= m_upperBoundX; charIndex++)
+            if (firstClipboardLine.lineSize() > 0)
             {
-                buffer.insertCharacter(firstClipboardLine[charIndex]);
+                for (int charIndex = m_lowerBoundX; charIndex <= m_upperBoundX; charIndex++)
+                {
+                    buffer.insertCharacter(firstClipboardLine[charIndex]);
+                }
+            }
+            else
+            {
+                if (firstBufferLine->lineSize())
+                {
+                    removeCharactersInRange(m_pasteCursorX + 1, buffer.getLineGapBuffer(m_pasteCursorY)->lineSize(), m_pasteCursorY);
+                }
+
+                m_buffer->insertLine(true);
+
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, 0, m_visualRestOfLineAfterCursor.size(), m_pasteCursorY + 1);
             }
         }
         else
@@ -1812,19 +1825,32 @@ void PasteCommand::redo()
             }
 
             // Insert characters from last clipboard line in-place onto the beginning of the first buffer line
-            int absoluteLastY = (boundDifferenceY > 0) ? m_pasteCursorY + boundDifferenceY : m_pasteCursorY - boundDifferenceY;
-            int lastLineYankX = (boundDifferenceY > 0) ? m_finalYankX : m_initialYankX;
-
-            buffer.moveCursor(absoluteLastY, 0);
-            for (int charIndex = 0; charIndex <= lastLineYankX; charIndex++)
+            if (lastClipboardLine.lineSize())
             {
-                buffer.insertCharacter(lastClipboardLine[charIndex]);
+                int absoluteLastY = (boundDifferenceY > 0) ? m_pasteCursorY + boundDifferenceY : m_pasteCursorY - boundDifferenceY;
+                int lastLineYankX = (boundDifferenceY > 0) ? m_finalYankX : m_initialYankX;
+
+                buffer.moveCursor(absoluteLastY, 0);
+                for (int charIndex = 0; charIndex <= lastLineYankX; charIndex++)
+                {
+                    buffer.insertCharacter(lastClipboardLine[charIndex]);
+                }
+
+                int insertEnd = lastLineYankX + m_visualRestOfLineAfterCursor.size() + 1;
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, lastLineYankX + 1, insertEnd, absoluteLastY);
+
+                removeCharactersInRange(insertEnd, buffer.getLineGapBuffer(absoluteLastY)->lineSize(), absoluteLastY);
             }
+            else
+            {
+                int absoluteLastY = (boundDifferenceY > 0) ? m_pasteCursorY + boundDifferenceY : m_pasteCursorY - boundDifferenceY;
 
-            int insertEnd = lastLineYankX + m_visualRestOfLineAfterCursor.size() + 1;
-            insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, lastLineYankX + 1, insertEnd, absoluteLastY);
+                m_buffer->moveCursor(absoluteLastY, 0);
 
-            removeCharactersInRange(insertEnd, buffer.getLineGapBuffer(absoluteLastY)->lineSize(), absoluteLastY);
+                m_buffer->insertLine(true);
+
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, 0, m_visualRestOfLineAfterCursor.size(), absoluteLastY + 1);
+            }
         }
     }
     else if (m_yankType == LINE_YANK)
@@ -2029,7 +2055,20 @@ void PasteCommand::undo()
 
         if (boundDifferenceY == 0)
         {
-            removeCharactersInRange(m_pasteCursorX + 1, m_pasteCursorX + m_upperBoundX - m_lowerBoundX + 2, m_pasteCursorY);
+            size_t firstClipboardLineSize = m_yankedLines[0].lineSize();
+
+            if (firstClipboardLineSize > 0)
+            {
+                removeCharactersInRange(m_pasteCursorX + 1, m_pasteCursorX + m_upperBoundX - m_lowerBoundX + 2, m_pasteCursorY);
+            }
+            else
+            {
+                m_buffer->moveCursor(m_pasteCursorY + 1, m_pasteCursorX);
+
+                m_buffer->removeLine();
+
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, m_pasteCursorX + 1, m_pasteCursorX + 1 + m_visualRestOfLineAfterCursor.size(), m_pasteCursorY);
+            }
         }
         else
         {
@@ -2052,6 +2091,12 @@ void PasteCommand::undo()
             int end = m_pasteCursorX + 1 + m_visualRestOfLineAfterCursor.size();
 
             insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, start, end, m_pasteCursorY);
+
+            if (m_yankedLines[m_yankedLines.size() - 1].lineSize() == 0)
+            {
+                buffer.moveCursor(m_pasteCursorY + m_yankedLines.size() - 1, 0);
+                buffer.removeLine();
+            }
         }
 
         buffer.moveCursor(m_pasteCursorY, m_pasteCursorX);
@@ -2101,9 +2146,23 @@ bool PasteCommand::execute()
         // Insert characters from first clipboard line in-place onto the first buffer line
         if (boundDifferenceY == 0)
         {
-            for (int charIndex = m_lowerBoundX; charIndex <= m_upperBoundX; charIndex++)
+            if (firstClipboardLine.lineSize() > 0)
             {
-                m_buffer->insertCharacter(firstClipboardLine[charIndex]);
+                for (int charIndex = m_lowerBoundX; charIndex <= m_upperBoundX; charIndex++)
+                {
+                    m_buffer->insertCharacter(firstClipboardLine[charIndex]);
+                }
+            }
+            else
+            {
+                if (firstBufferLine->lineSize())
+                {
+                    removeCharactersInRangeAndInsertIntoVector(m_visualRestOfLineAfterCursor, m_pasteCursorX + 1, m_buffer->getLineGapBuffer(m_pasteCursorY)->lineSize(), m_pasteCursorY);
+                }
+
+                m_buffer->insertLine(true);
+
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, 0, m_visualRestOfLineAfterCursor.size(), m_pasteCursorY + 1);
             }
         }
         else
@@ -2135,19 +2194,32 @@ bool PasteCommand::execute()
             }
 
             // Insert characters from last clipboard line in-place onto the beginning of the first buffer line
-            int absoluteLastY = (boundDifferenceY > 0) ? m_pasteCursorY + boundDifferenceY : m_pasteCursorY - boundDifferenceY;
-            int lastLineYankX = (boundDifferenceY > 0) ? m_finalYankX : m_initialYankX;
-
-            m_buffer->moveCursor(absoluteLastY, 0);
-            for (int charIndex = 0; charIndex <= lastLineYankX; charIndex++)
+            if (lastClipboardLine.lineSize())
             {
-                m_buffer->insertCharacter(lastClipboardLine[charIndex]);
+                int absoluteLastY = (boundDifferenceY > 0) ? m_pasteCursorY + boundDifferenceY : m_pasteCursorY - boundDifferenceY;
+                int lastLineYankX = (boundDifferenceY > 0) ? m_finalYankX : m_initialYankX;
+
+                m_buffer->moveCursor(absoluteLastY, 0);
+                for (int charIndex = 0; charIndex <= lastLineYankX; charIndex++)
+                {
+                    m_buffer->insertCharacter(lastClipboardLine[charIndex]);
+                }
+
+                int insertEnd = lastLineYankX + m_visualRestOfLineAfterCursor.size() + 1;
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, lastLineYankX + 1, insertEnd, absoluteLastY);
+
+                removeCharactersInRange(insertEnd, m_editor->buffer().getLineGapBuffer(absoluteLastY)->lineSize(), absoluteLastY);
             }
+            else
+            {
+                int absoluteLastY = (boundDifferenceY > 0) ? m_pasteCursorY + boundDifferenceY : m_pasteCursorY - boundDifferenceY;
 
-            int insertEnd = lastLineYankX + m_visualRestOfLineAfterCursor.size() + 1;
-            insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, lastLineYankX + 1, insertEnd, absoluteLastY);
+                m_buffer->moveCursor(absoluteLastY, 0);
 
-            removeCharactersInRange(insertEnd, m_editor->buffer().getLineGapBuffer(absoluteLastY)->lineSize(), absoluteLastY);
+                m_buffer->insertLine(true);
+
+                insertCharactersInRangeFromVector(m_visualRestOfLineAfterCursor, 0, m_visualRestOfLineAfterCursor.size(), absoluteLastY + 1);
+            }
         }
     }
     else if (m_yankType == LINE_YANK)

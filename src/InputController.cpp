@@ -7,8 +7,8 @@
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
 {
-    m_editor->commandQueue().execute<InsertCharacterCommand>(true, 1, ' ');
-    m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(true, 1, true);
+    m_editor->commandQueue().execute<InsertCharacterCommand>(false, 1, ' ');
+    m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(false, 1, true);
 
     m_keys = {
         CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
@@ -200,10 +200,10 @@ void InputController::handleNormalModeInput(int input)
             m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, -1 * repetitionCount());
             break;
         case i:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(true, 1, 1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, 1 * repetitionCount());
             break;
         case p:
-            m_editor->commandQueue().execute<MoveCursorYCommand>(true, 1, -1 * repetitionCount());
+            m_editor->commandQueue().execute<MoveCursorYCommand>(false, 1, -1 * repetitionCount());
             break;
         case APOSTROPHE:
             m_editor->commandQueue().execute<MoveCursorXCommand>(false, 1, 1 * repetitionCount());
