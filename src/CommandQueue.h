@@ -70,7 +70,10 @@ public:
                             m_editor, m_buffer, m_view, m_commandQueue, true, true,
                             std::forward<CommandArgs>(commandArgs)...);
 
-                    m_commands[m_currentCommandCount - 1]->m_renderExecute = false;
+                    if (m_currentCommandCount >= 1)
+                    {
+                        m_commands[m_currentCommandCount - 1]->m_renderExecute = false;
+                    }
                 }
 
                 m_commandRepetitions[m_currentCommandCount] = --m_repetitionCounter;
@@ -118,7 +121,7 @@ public:
             }
             else
             {
-                if (m_consecutiveBatchCommands > 0)
+                if (m_consecutiveBatchCommands > 0 && m_currentCommandCount >= 1)
                 {
                     m_commands[m_currentCommandCount - 1]->m_renderExecute = true;
                 }

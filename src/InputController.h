@@ -38,7 +38,7 @@ private:
     mutable std::mt19937 m_numberGenerator;
     mutable std::uniform_int_distribution<int> m_distribution;
 
-    int m_numberOfRandomInputs = 20000;
+    int m_numberOfRandomInputs = 5000;
 
     int m_numberOfInputRepetitions = 0;
     int m_lastInput = 0;

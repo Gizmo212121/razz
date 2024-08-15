@@ -775,7 +775,7 @@ void InputController::displayErrorMessage(const std::string& message)
 
     m_editor->view().displayCommandBuffer(COLOR_PAIR(ERROR_MESSAGE_PAIR));
 
-    // getch();
+    getch();
 }
 
 void InputController::handleVisualModes(int input)
