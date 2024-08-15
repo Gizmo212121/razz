@@ -7,9 +7,16 @@
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
 {
-    // m_editor->commandQueue().execute<InsertCharacterCommand>(false, 1, ' ');
-    // m_editor->commandQueue().execute<RemoveCharacterNormalCommand>(false, 1, true);
 
+    if (m_testInput)
+    {
+        initializeRandomInput();
+    }
+}
+
+void InputController::initializeRandomInput()
+{
+    assert(m_numberOfInputRepetitions > 0);
 
     m_keys = {
         CTRL_C, TAB, ENTER, CTRL_R, CTRL_V, CTRL_W, ESCAPE, SPACE, QUOTE, APOSTROPHE,
@@ -18,9 +25,11 @@ InputController::InputController(Editor* editor)
         o, p, q, r, s, t, u, v, w, x, y, LEFT_BRACE, BACKSPACE };
 
 
-    // std::random_device rd;
-
-    // unsigned int seed = rd();
+    if (m_randomSeed)
+    {
+        std::random_device rd;
+        m_seed = rd();
+    }
 
     m_distribution = std::uniform_int_distribution<int>(0, static_cast<int>(m_keys.size()));
 
@@ -44,6 +53,53 @@ int InputController::getRandomKey() const
     return m_keys[index];
 }
 
+int InputController::getInput()
+{
+    if (!m_testInput || m_numberOfRandomInputs-- <= 0)
+    {
+        return getch();
+    }
+    else if (m_inputRepetitionCount <= 1)
+    {
+        m_inputRepetitionCount = m_numberOfInputRepetitions;
+
+        if (m_editor->mode() == INSERT_MODE)
+        {
+            if (m_insertModeInsertsCount > 0)
+            {
+                int input = getRandomKey();
+                m_lastInput = input;
+
+                m_insertModeInsertsCount--;
+
+                return input;
+            }
+            else
+            {
+                int input = CTRL_C;
+                m_lastInput = input;
+
+                m_insertModeInsertsCount = m_numberOfInsertModeInserts;
+
+                return input;
+            }
+        }
+        else
+        {
+            int input = getRandomKey();
+            m_lastInput = input;
+
+            return input;
+        }
+    }
+    else
+    {
+        m_inputRepetitionCount--;
+
+        return m_lastInput;
+    }
+}
+
 int InputController::repetitionCount()
 {
     int repetitionCount = atoi(m_repetitionBuffer.c_str());
@@ -55,50 +111,7 @@ int InputController::repetitionCount()
 
 void InputController::handleInput()
 {
-    int input = 0;
-
-    if (!m_testInput || m_numberOfRandomInputs-- <= 0)
-    {
-        input = getch();
-    }
-    else
-    {
-        if (m_editor->mode() == INSERT_MODE)
-        {
-            if (m_numberOfInsertModeInserts > 0)
-            {
-                input = getRandomKey();
-                m_lastInput = input;
-
-                m_numberOfInsertModeInserts--;
-            }
-            else
-            {
-                input = CTRL_C;
-                m_lastInput = input;
-
-                m_numberOfInsertModeInserts = 5;
-            }
-        }
-        else
-        {
-            input = getRandomKey();
-            m_lastInput = input;
-        }
-
-
-        // if (m_numberOfInputRepetitions <= 0)
-        // {
-        //     input = getRandomKey();
-        //     m_lastInput = input;
-        //     m_numberOfInputRepetitions = 0;
-        // }
-        // else
-        // {
-        //     input = m_lastInput;
-        //     m_numberOfInputRepetitions--;
-        // }
-    }
+    int input = getInput();
 
     // Global input
     switch (input)

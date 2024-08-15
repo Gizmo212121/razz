@@ -28,25 +28,41 @@ private:
 
     std::pair<int, int> m_cursorPosOnVisualMode;
 
-// ==============RANDOM INPUT TESTING =================
+// ============== RANDOM INPUT TESTING =================
 
     const bool m_testInput = false;
+    const bool m_randomSeed = false;
+
+    int m_numberOfRandomInputs = 1000;
+    const unsigned int m_numberOfInputRepetitions = 1; // Max repetitions per input
+    const unsigned int m_numberOfInsertModeInserts = 5; // This is the maximum number of inputs in insert mode before exiting
+    unsigned int m_seed = 273;
+
+    int m_lastInput = 0;
+    int m_inputRepetitionCount = 0;
+    int m_insertModeInsertsCount = m_numberOfInsertModeInserts;
 
     std::vector<int> m_keys;
-    int getRandomKey() const;
     std::random_device m_randomDevice;
     mutable std::mt19937 m_numberGenerator;
     mutable std::uniform_int_distribution<int> m_distribution;
 
-    int m_numberOfRandomInputs = 5000;
 
-    int m_numberOfInputRepetitions = 0;
-    int m_lastInput = 0;
-    unsigned int m_seed = 272;
-    int m_numberOfInsertModeInserts = 5;
+    int getRandomKey() const;
+    void initializeRandomInput();
+    int getInput();
 
-// ====================================================
+// =====================================================
 
+// ==================== MACROS =========================
+
+
+
+
+
+
+
+// =============== PRIVATE FUNCTIONS ===================
 
     void handleNormalModeInput(int input);
     void handleCommandModeInput(int input);
