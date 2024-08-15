@@ -41,7 +41,7 @@ private:
 
     int m_numberOfInputRepetitions = 0;
     int m_lastInput = 0;
-    unsigned int m_seed = 262;
+    unsigned int m_seed = 265;
     int m_numberOfInsertModeInserts = 5;
 
 
