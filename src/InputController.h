@@ -2,7 +2,7 @@
 
 #include "Command.h"
 #include "CircularBuffer.h"
-#include <random>
+#include "MacroRegisters.h"
 
 class Editor;
 
@@ -57,9 +57,8 @@ private:
 // ==================== MACROS =========================
 
 
-
-
-
+    MacroRegisters m_macroRegisters;
+    char m_currentMacroRegister = 'a';
 
 
 // =============== PRIVATE FUNCTIONS ===================
@@ -69,6 +68,10 @@ private:
     void handleInsertModeInput(int input);
     void handleReplaceCharMode(int input);
     void handleVisualModes(int input);
+
+    void handleMacroRecord();
+    void handleMacroReplay(const int repetition);
+    void replayLastMacro(const int repetition);
 
     void handleCommandBufferInput();
     void handleDeleteCommands(int input);
@@ -87,7 +90,7 @@ public:
 
     InputController(Editor* editor);
 
-    void handleInput();
+    void handleInput(int input = -1);
 
     // Getters
     const std::string& commandBuffer() const { return m_commandBuffer; }

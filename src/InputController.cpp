@@ -3,6 +3,8 @@
 #include "Editor.h"
 #include "Command.h"
 #include "Includes.h"
+#include <cstdlib>
+#include <ncurses.h>
 
 InputController::InputController(Editor* editor)
     : m_editor(editor), m_commandBuffer(""), m_repetitionBuffer(""), m_circularInputBuffer(INPUT_CONTROLLER_MAX_CIRCULAR_BUFFER_SIZE)
@@ -109,9 +111,62 @@ int InputController::repetitionCount()
     return std::clamp(repetitionCount, 1, MAX_REPETITION_COUNT);
 }
 
-void InputController::handleInput()
+void InputController::handleMacroRecord()
 {
-    int input = getInput();
+    int inputRegister = getInput();
+
+    if (MacroRegisters::isValidRegisterKey(inputRegister))
+    {
+        m_currentMacroRegister = inputRegister;
+    }
+    else
+    {
+        return;
+    }
+
+    int recordInput;
+    MODE currentMode;
+
+    while ((recordInput = getInput()) != m || (currentMode = m_editor->mode()) != NORMAL_MODE)
+    {
+        m_macroRegisters.add(m_currentMacroRegister, recordInput);
+
+        handleInput(recordInput);
+    }
+}
+
+void InputController::handleMacroReplay(const int repetition)
+{
+    int inputRegister = getInput();
+
+    if (!MacroRegisters::isValidRegisterKey(inputRegister)) { return; }
+
+    for (int iter = 0; iter < repetition; iter++)
+    {
+        for (size_t i = 0; i < m_macroRegisters[inputRegister].size(); i++)
+        {
+            handleInput(m_macroRegisters[inputRegister][i]);
+        }
+    }
+}
+
+void InputController::replayLastMacro(const int repetition)
+{
+    for (int iter = 0; iter < repetition; iter++)
+    {
+        for (size_t i = 0; i < m_macroRegisters[m_currentMacroRegister].size(); i++)
+        {
+            handleInput(m_macroRegisters[m_currentMacroRegister][i]);
+        }
+    }
+}
+
+void InputController::handleInput(int input)
+{
+    if (input == -1)
+    {
+        input = getInput();
+    }
 
     // Global input
     switch (input)
@@ -372,6 +427,16 @@ void InputController::handleNormalModeInput(int input)
         }
         case t:
             m_editor->commandQueue().execute<ToggleCommentLineCommand>(false, 1);
+            break;
+        case m:
+            clearRepetitionBuffer();
+            handleMacroRecord();
+            break;
+        case AT:
+            handleMacroReplay(repetitionCount());
+            break;
+        case M:
+            replayLastMacro(repetitionCount());
             break;
         default:
         {
