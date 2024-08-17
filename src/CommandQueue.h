@@ -66,8 +66,7 @@ public:
                 else
                 {
                     command = std::make_unique<CommandType>(
-                            // m_editor, m_buffer, m_view, m_commandQueue, true, false,
-                            m_editor, m_buffer, m_view, m_commandQueue, true, true,
+                            m_editor, m_buffer, m_view, m_commandQueue, true, false,
                             std::forward<CommandArgs>(commandArgs)...);
 
                     if (m_currentCommandCount >= 1)
