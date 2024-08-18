@@ -1,4 +1,5 @@
 #include "FileGapBuffer.h"
+#include <cstdlib>
 #include <ncurses.h>
 
 #include <utility>
@@ -70,6 +71,65 @@ void FileGapBuffer::grow()
 
     m_buffer = std::move(newBuffer);
     m_bufferSize = newSize;
+}
+
+void FileGapBuffer::swapLinesInRange(bool right, int start, int end)
+{
+    if (static_cast<size_t>(right) && static_cast<size_t>(end) == m_bufferSize - m_postGapIndex + m_preGapIndex - 1) { return; }
+    if (!right && start == 0) { return; }
+    if (end - start < 0) { return; }
+
+    size_t absoluteStart = (static_cast<size_t>(start) < m_preGapIndex) ? static_cast<size_t>(start) : static_cast<size_t>(start) + m_postGapIndex - m_preGapIndex;
+    size_t absoluteEnd = (static_cast<size_t>(end) < m_preGapIndex) ? static_cast<size_t>(start) : static_cast<size_t>(start) + m_postGapIndex - m_preGapIndex;
+
+    // MOve up first
+    if (!right)
+    {
+        if (absoluteStart < m_preGapIndex && absoluteEnd < m_preGapIndex)
+        {
+            const std::shared_ptr<LineGapBuffer>& lineLeftOfStart = m_buffer[absoluteStart - 1];
+
+            std::move(m_buffer.begin() + absoluteStart, m_buffer.begin() + absoluteEnd, m_buffer.begin() + absoluteStart - 1);
+            m_buffer[absoluteEnd] = std::move(lineLeftOfStart);
+        }
+        else if (absoluteStart < m_preGapIndex && absoluteEnd >= m_postGapIndex)
+        {
+            if (absoluteEnd < m_postGapIndex) { endwin(); exit(1); }
+
+            const std::shared_ptr<LineGapBuffer>& lineLeftOfStart = m_buffer[absoluteStart - 1];
+
+            size_t numberOfLinesBeforePreGapIndex = m_preGapIndex - absoluteStart;
+
+            std::move(m_buffer.begin() + absoluteStart, m_buffer.begin() + numberOfLinesBeforePreGapIndex, m_buffer.begin() + absoluteStart - 1);
+
+            m_buffer[m_preGapIndex - 1] = std::move(m_buffer[m_postGapIndex]);
+
+            std::move(m_buffer.begin() + m_postGapIndex + 1, m_buffer.begin() + absoluteEnd, m_buffer.begin() + m_postGapIndex);
+
+            m_buffer[absoluteEnd] = std::move(lineLeftOfStart);
+        }
+        else
+        {
+            if (absoluteStart == m_postGapIndex)
+            {
+                // const std::shared_ptr<LineGapBuffer>& lineLeftOfStart = m_buffer[m_preGapIndex - 1];
+                const std::shared_ptr<LineGapBuffer>& lineLeftOfStart = m_buffer[m_postGapIndex];
+
+                m_buffer[m_preGapIndex - 1] = std::move(m_buffer[m_postGapIndex]);
+
+                std::move(m_buffer.begin() + absoluteStart + 1, m_buffer.begin() + absoluteEnd, m_buffer.begin() + absoluteStart);
+
+                m_buffer[absoluteEnd] = std::move(lineLeftOfStart);
+            }
+            else
+            {
+                const std::shared_ptr<LineGapBuffer>& lineLeftOfStart = m_buffer[absoluteStart - 1];
+
+                std::move(m_buffer.begin() + absoluteStart, m_buffer.begin() + absoluteEnd, m_buffer.begin() + absoluteStart - 1);
+                m_buffer[absoluteEnd] = std::move(lineLeftOfStart);
+            }
+        }
+    }
 }
 
 const std::shared_ptr<LineGapBuffer>& FileGapBuffer::operator [](size_t index) const

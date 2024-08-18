@@ -673,3 +673,20 @@ public:
     ToggleCommentLinesVisualCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo)
         : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo) {}
 };
+
+class SwapLinesVisualModeCommand : public Command
+{
+private:
+    std::pair<int, int> m_initialPos = { 0, 0 };
+    std::pair<int, int> m_finalPos = { 0, 0 };
+
+    bool m_down = true;
+
+    void redo() override;
+    void undo() override;
+    bool execute() override;
+
+public:
+    SwapLinesVisualModeCommand(Editor* editor, Buffer* buffer, View* view, CommandQueue* commandQueue, bool renderExecute, bool renderUndo, bool down)
+        : Command(editor, buffer, view, commandQueue, renderExecute, renderUndo), m_down(down) {}
+};

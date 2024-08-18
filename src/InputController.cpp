@@ -1073,6 +1073,12 @@ void InputController::handleVisualModes(int input)
         case t:
             m_editor->commandQueue().execute<ToggleCommentLinesVisualCommand>(false, 1);
             break;
+        case CTRL_U:
+            m_editor->commandQueue().execute<SwapLinesVisualModeCommand>(true, 1, false);
+            break;
+        case CTRL_D:
+            m_editor->commandQueue().execute<SwapLinesVisualModeCommand>(true, 1, true);
+            break;
     }
 }
 

@@ -13,7 +13,6 @@ private:
 public:
 
     FileGapBuffer(int initialSize);
-    // FileGapBuffer(int initialSize, const std::string& line);
 
     void up();
     void down();
@@ -23,7 +22,7 @@ public:
 
     void grow();
 
-    // void printFullLineGapBuffer() const;
+    void swapLinesInRange(bool down, int start, int end);
 
     // Getters
     const std::vector<std::shared_ptr<LineGapBuffer>>& getVectorOfSharedPtrsToLineGapBuffers() const { return m_buffer; }

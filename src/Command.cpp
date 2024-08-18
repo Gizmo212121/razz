@@ -2888,3 +2888,48 @@ bool ToggleCommentLinesVisualCommand::execute()
 
     return true;
 }
+
+void SwapLinesVisualModeCommand::redo()
+{
+
+    if (m_renderExecute) { m_editor->view().display(); }
+}
+void SwapLinesVisualModeCommand::undo()
+{
+
+    if (m_renderUndo) { m_editor->view().display(); }
+}
+bool SwapLinesVisualModeCommand::execute()
+{
+    m_initialPos = m_buffer->getCursorPos();
+    m_finalPos = m_editor->inputController().initialVisualModeCursor();
+
+    int lowerBoundY = std::min(m_initialPos.first, m_finalPos.first);
+    int upperBoundY = std::max(m_initialPos.first, m_finalPos.first);
+
+    int differenceY = upperBoundY - lowerBoundY;
+
+    int numberOfLines = static_cast<int>(m_buffer->getFileGapBuffer().numberOfLines());
+
+    if (differenceY == numberOfLines) { return false; }
+    if (m_down && upperBoundY >= numberOfLines - 1) { return false; }
+    if (!m_down && lowerBoundY <= 0) { return false; }
+
+
+    FileGapBuffer& fileGapBuffer = const_cast<FileGapBuffer&>(m_buffer->getFileGapBuffer());
+
+    fileGapBuffer.swapLinesInRange(m_down, lowerBoundY, upperBoundY);
+
+    if (m_down)
+    {
+        m_buffer->shiftCursorY(1);
+    }
+    else
+    {
+        // m_buffer->shiftCursorY(-1);
+    }
+
+    if (m_renderExecute) { m_editor->view().display(); }
+
+    return true;
+}

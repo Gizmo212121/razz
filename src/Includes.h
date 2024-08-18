@@ -327,9 +327,11 @@ enum COLOR_PAIRS
 enum KEYS
 {
     CTRL_C = 3,
+    CTRL_D = 4,
     TAB = 9,
     ENTER = 10,
     CTRL_R = 18,
+    CTRL_U = 21,
     CTRL_V = 22,
     CTRL_W = 23,
     ESCAPE = 27,
