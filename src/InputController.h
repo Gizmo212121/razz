@@ -60,6 +60,11 @@ private:
     MacroRegisters m_macroRegisters;
     char m_currentMacroRegister = 'a';
 
+    void handleMacroRecord();
+    void handleMacroReplay(const int repetition, const int recursiveCallFromRecordInputRegister = -1);
+    void replayLastMacro(const int repetition);
+    void recursiveMacroReplay(const int macroRegister);
+
 
 // =============== PRIVATE FUNCTIONS ===================
 
@@ -68,10 +73,6 @@ private:
     void handleInsertModeInput(int input);
     void handleReplaceCharMode(int input);
     void handleVisualModes(int input);
-
-    void handleMacroRecord();
-    void handleMacroReplay(const int repetition);
-    void replayLastMacro(const int repetition);
 
     void handleCommandBufferInput();
     void handleDeleteCommands(int input);

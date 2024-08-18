@@ -124,20 +124,32 @@ void InputController::handleMacroRecord()
         return;
     }
 
-    int recordInput;
-    MODE currentMode;
+    int recordInput = 0;
+    MODE currentMode = NORMAL_MODE;
 
     while ((recordInput = getInput()) != m || (currentMode = m_editor->mode()) != NORMAL_MODE)
     {
         m_macroRegisters.add(m_currentMacroRegister, recordInput);
 
-        handleInput(recordInput);
+        if (recordInput == AT)
+        {
+            handleMacroReplay(repetitionCount(), inputRegister);
+        }
+        else
+        {
+            handleInput(recordInput);
+        }
     }
 }
 
-void InputController::handleMacroReplay(const int repetition)
+void InputController::handleMacroReplay(const int repetition, const int recursiveCallFromRecordInputRegister)
 {
     int inputRegister = getInput();
+
+    if (recursiveCallFromRecordInputRegister != -1)
+    {
+        m_macroRegisters.add(recursiveCallFromRecordInputRegister, inputRegister);
+    }
 
     if (!MacroRegisters::isValidRegisterKey(inputRegister)) { return; }
 
@@ -145,7 +157,35 @@ void InputController::handleMacroReplay(const int repetition)
     {
         for (size_t i = 0; i < m_macroRegisters[inputRegister].size(); i++)
         {
-            handleInput(m_macroRegisters[inputRegister][i]);
+            int currentCommand = m_macroRegisters[inputRegister][i];
+
+            if (currentCommand == AT)
+            {
+                recursiveMacroReplay(m_macroRegisters[inputRegister][++i]);
+            }
+            else
+            {
+                handleInput(currentCommand);
+            }
+        }
+    }
+}
+
+void InputController::recursiveMacroReplay(const int macroRegister)
+{
+    if (!MacroRegisters::isValidRegisterKey(macroRegister)) { return; }
+
+    for (size_t i = 0; i < m_macroRegisters[macroRegister].size(); i++)
+    {
+        int currentCommand = m_macroRegisters[macroRegister][i];
+
+        if (currentCommand == AT)
+        {
+            recursiveMacroReplay(m_macroRegisters[macroRegister][++i]);
+        }
+        else
+        {
+            handleInput(currentCommand);
         }
     }
 }
